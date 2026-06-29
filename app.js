@@ -13,6 +13,7 @@
   var THEMES = [['orange','#ff9f1c'],['blau','#3a86ff'],['gruen','#2a9d8f'],['pink','#ef476f'],['lila','#8338ec']];
   var POINTS_BY_DIFF = { leicht: 5, mittel: 10, schwer: 20 };
   var DIFFS = [['leicht','Leicht',5],['mittel','Mittel',10],['schwer','Schwer',20]];
+  var AREA_INFO = { rechnen: ['\uD83D\uDD22','Rechnen'], logik: ['\uD83E\uDDE0','Logik'], schreiben: ['\u270F\uFE0F','Schreiben'], lesen: ['\uD83D\uDCD6','Lesen'], schule: ['\uD83D\uDCC2','Schule'] };
 
   var WORDS_LEICHT = ['Hund','Katze','Baum','Haus','Auto','Ball','Buch','Fisch','Mond','Hand','Tor','Ente'];
   var WORDS_MITTEL = ['Apfel','Sonne','Blume','Schule','Tisch','Wolke','Stern','Vogel','Brot','Banane','Garten','Wasser'];
@@ -31,16 +32,17 @@
   ];
 
   // ---- State ----
-  function defaultState() { return { points: 0, completed: 0, pin: DEFAULT_PIN, pinSet: false, streak: 0, lastActive: null, theme: 'orange', bdayBonusYear: null, startHour: 7, endHour: 20, difficulty: 'mittel' }; }
+  function defaultState() { return { points: 0, completed: 0, pin: DEFAULT_PIN, pinSet: false, streak: 0, lastActive: null, theme: 'orange', bdayBonusYear: null, startHour: 7, endHour: 20, difficulty: 'mittel', history: [] }; }
   function load() {
     try { var raw = localStorage.getItem('maximeState'); if (!raw) return defaultState(); var s = JSON.parse(raw); if (typeof s.points !== 'number') return defaultState();
-      if (typeof s.streak !== 'number') s.streak = 0; if (!s.lastActive) s.lastActive = null; if (!s.theme) s.theme = 'orange'; if (typeof s.bdayBonusYear === 'undefined') s.bdayBonusYear = null; if (!s.pin) s.pin = DEFAULT_PIN; if (typeof s.startHour !== 'number') s.startHour = 7; if (typeof s.endHour !== 'number') s.endHour = 20; if (!s.difficulty) s.difficulty = 'mittel'; return s; }
+      if (typeof s.streak !== 'number') s.streak = 0; if (!s.lastActive) s.lastActive = null; if (!s.theme) s.theme = 'orange'; if (typeof s.bdayBonusYear === 'undefined') s.bdayBonusYear = null; if (!s.pin) s.pin = DEFAULT_PIN; if (typeof s.startHour !== 'number') s.startHour = 7; if (typeof s.endHour !== 'number') s.endHour = 20; if (!s.difficulty) s.difficulty = 'mittel'; if (!s.history || typeof s.history.length !== 'number') s.history = []; return s; }
     catch (e) { return defaultState(); }
   }
   function save(s) { try { localStorage.setItem('maximeState', JSON.stringify(s)); } catch (e) {} }
   var state = load();
 
   function pointsPerTask() { return POINTS_BY_DIFF[state.difficulty] || 10; }
+  function logActivity(entry) { entry.ts = Date.now(); if (!state.history) state.history = []; state.history.push(entry); if (state.history.length > 300) state.history = state.history.slice(-300); save(state); }
 
   // ---- Datum / Streak ----
   function dStr(d) { var m = d.getMonth() + 1; var day = d.getDate(); return d.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (day < 10 ? '0' + day : day); }
@@ -65,6 +67,9 @@
   function addPoints(n) { var before = levelFor(state.points); state.points += n; state.completed += 1; updateStreak(); save(state); return levelFor(state.points) > before; }
   function daysUntil(dateStr) { var target = new Date(dateStr + 'T00:00:00'); var now = new Date(); var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()); return Math.ceil((target - t0) / (1000 * 60 * 60 * 24)); }
   function daysUntilBirthday() { var now = new Date(); var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()); var b = new Date(now.getFullYear(), BIRTHDAY_MONTH - 1, BIRTHDAY_DAY); if (b < t0) b = new Date(now.getFullYear() + 1, BIRTHDAY_MONTH - 1, BIRTHDAY_DAY); return Math.round((b - t0) / (1000 * 60 * 60 * 24)); }
+  function fmtTs(ts) { var d = new Date(ts); function p(n) { return n < 10 ? '0' + n : n; } return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '. ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+  function areaInfo(t) { return AREA_INFO[t] || ['\u2753', t]; }
+  function esc(s) { s = String(s); return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function el(html) { var d = document.createElement('div'); d.innerHTML = html; return d.firstChild; }
   function app() { return document.getElementById('app'); }
   function clear() { app().innerHTML = ''; }
@@ -191,6 +196,9 @@
   function renderParentArea() {
     clear(); app().appendChild(backBar()); app().appendChild(el('<div class="screen-title">\u2699\uFE0F Eltern-Bereich</div>'));
     app().appendChild(el('<div class="card"><div class="readtext">Aktueller Stand:<br><b>' + state.points + ' Punkte</b> \u00b7 Level ' + levelFor(state.points) + ' (' + badgeNameFor(state.points) + ')</div></div>'));
+    var histBtn = el('<button class="btn">\uD83D\uDCCA Verlauf ansehen</button>');
+    histBtn.addEventListener('click', renderHistory);
+    app().appendChild(histBtn);
     var tCard = el('<div class="card"></div>');
     tCard.appendChild(el('<div class="readtext" style="text-align:center">\u23F0 Lernzeit</div>'));
     tCard.appendChild(el('<div class="readtext" style="text-align:center;margin:6px 0"><b>' + fmtHour(state.startHour) + ' - ' + fmtHour(state.endHour) + ' Uhr</b></div>'));
@@ -214,21 +222,62 @@
     var resetBtn = el('<button class="btn" style="background:#e63946">\uD83D\uDDD1\uFE0F Fortschritt zur\u00fccksetzen</button>');
     resetBtn.addEventListener('click', confirmReset);
     app().appendChild(resetBtn);
-    app().appendChild(el('<div class="note">Setzt Punkte, Level und die Tages-Serie auf null zur\u00fcck. Farbe, Zeiten und Schwierigkeit bleiben erhalten.</div>'));
+    app().appendChild(el('<div class="note">Setzt Punkte, Level, Serie und Verlauf auf null zur\u00fcck. Farbe, Zeiten und Schwierigkeit bleiben erhalten.</div>'));
   }
   function confirmReset() {
     clear(); app().appendChild(el('<div class="screen-title">Wirklich zur\u00fccksetzen?</div>'));
-    app().appendChild(el('<div class="card"><div class="readtext">Alle Punkte und Level von ' + KIND_NAME + ' werden gel\u00f6scht. Das kann nicht r\u00fcckg\u00e4ngig gemacht werden.</div></div>'));
+    app().appendChild(el('<div class="card"><div class="readtext">Alle Punkte, Level und der Verlauf von ' + KIND_NAME + ' werden gel\u00f6scht. Das kann nicht r\u00fcckg\u00e4ngig gemacht werden.</div></div>'));
     var yes = el('<button class="btn" style="background:#e63946">Ja, alles zur\u00fccksetzen</button>');
     yes.addEventListener('click', function () { resetProgress(); renderResetDone(); });
     var no = el('<button class="btn gray">Abbrechen</button>');
     no.addEventListener('click', renderHome);
     app().appendChild(yes); app().appendChild(no);
   }
-  function resetProgress() { state.points = 0; state.completed = 0; state.streak = 0; state.lastActive = null; save(state); }
+  function resetProgress() { state.points = 0; state.completed = 0; state.streak = 0; state.lastActive = null; state.history = []; save(state); }
   function renderResetDone() {
     clear(); app().appendChild(el('<div class="header" style="margin-top:40px"><div class="badge-big">\u2705</div><div class="screen-title">Zur\u00fcckgesetzt!</div><div class="readtext">' + KIND_NAME + ' startet wieder bei 0 Punkten.</div></div>'));
     var b = el('<button class="btn green">Zum Start</button>'); b.addEventListener('click', renderHome); app().appendChild(b);
+  }
+
+  // ---- Verlauf / Historie ----
+  function renderHistory() {
+    clear();
+    var back = el('<button class="back-btn">\u2190 Zur\u00fcck</button>'); back.addEventListener('click', renderParentArea); app().appendChild(back);
+    app().appendChild(el('<div class="screen-title">\uD83D\uDCCA Verlauf</div>'));
+    var hist = state.history || [];
+    var total = hist.length, correct = 0, wrong = 0; var perArea = {};
+    for (var i = 0; i < hist.length; i++) { var h = hist[i]; if (h.ok) correct++; else wrong++; var a = perArea[h.type] || { ok: 0, no: 0 }; if (h.ok) a.ok++; else a.no++; perArea[h.type] = a; }
+    var sum = el('<div class="card"></div>');
+    sum.appendChild(el('<div class="readtext" style="text-align:center"><b>' + state.completed + '</b> Aufgaben gel\u00f6st \u00b7 <b>' + state.points + '</b> Punkte</div>'));
+    sum.appendChild(el('<div class="readtext" style="text-align:center;margin-top:6px">\u2705 ' + correct + ' richtig \u00b7 \u274C ' + wrong + ' falsch</div>'));
+    var order = ['rechnen','logik','schreiben','lesen','schule']; var lines = '';
+    for (var k = 0; k < order.length; k++) { var t = order[k]; if (perArea[t]) { var inf = areaInfo(t); lines += '<div style="font-size:18px;margin-top:4px">' + inf[0] + ' ' + inf[1] + ': ' + perArea[t].ok + ' richtig' + (perArea[t].no ? (' \u00b7 ' + perArea[t].no + ' falsch') : '') + '</div>'; } }
+    if (lines) sum.appendChild(el('<div style="margin-top:10px">' + lines + '</div>'));
+    app().appendChild(sum);
+    // Falsche Antworten
+    var wrongs = []; for (var w = hist.length - 1; w >= 0; w--) { if (!hist[w].ok) wrongs.push(hist[w]); }
+    app().appendChild(el('<div class="screen-title" style="font-size:22px">\u274C Falsch beantwortet</div>'));
+    if (wrongs.length === 0) { app().appendChild(el('<div class="note">Noch keine falschen Antworten \u2013 super! \uD83C\uDF1F</div>')); }
+    else {
+      var wcard = el('<div class="card"></div>'); var maxw = Math.min(wrongs.length, 20);
+      for (var x = 0; x < maxw; x++) { var e = wrongs[x]; var inf2 = areaInfo(e.type); var qtxt = e.q ? (' \u2013 ' + esc(e.q)) : '';
+        var given = (e.given !== undefined && e.given !== null && e.given !== '') ? esc(e.given) : '\u2013';
+        wcard.appendChild(el('<div style="font-size:17px;border-bottom:1px solid #eee;padding:8px 0">' + inf2[0] + ' <b>' + inf2[1] + '</b>' + qtxt + '<br><span style="color:#e63946">Maxime: ' + given + '</span> \u00b7 richtig: <b>' + esc(e.correct) + '</b><br><span style="color:#999;font-size:14px">' + fmtTs(e.ts) + '</span></div>')); }
+      app().appendChild(wcard);
+      if (wrongs.length > maxw) app().appendChild(el('<div class="note">Es werden die letzten ' + maxw + ' falschen Antworten angezeigt.</div>'));
+    }
+    // Letzte Aktivitaeten
+    app().appendChild(el('<div class="screen-title" style="font-size:22px">\uD83D\uDD52 Letzte Aktivit\u00e4ten</div>'));
+    if (total === 0) { app().appendChild(el('<div class="note">Noch keine Aktivit\u00e4ten.</div>')); }
+    else {
+      var rcard = el('<div class="card"></div>'); var rmax = Math.min(total, 15);
+      for (var r = 0; r < rmax; r++) { var ev = hist[total - 1 - r]; var inf3 = areaInfo(ev.type); var mark = ev.ok ? '\u2705' : '\u274C';
+        rcard.appendChild(el('<div style="font-size:16px;padding:5px 0">' + mark + ' ' + inf3[0] + ' ' + inf3[1] + (ev.pts ? (' (+' + ev.pts + ')') : '') + ' <span style="color:#999;font-size:13px">' + fmtTs(ev.ts) + '</span></div>')); }
+      app().appendChild(rcard);
+    }
+    var clr = el('<button class="btn gray small">Verlauf leeren</button>');
+    clr.addEventListener('click', function () { state.history = []; save(state); renderHistory(); });
+    app().appendChild(clr);
   }
 
   function celebrate(leveledUp, cb) {
@@ -269,15 +318,12 @@
     btn.addEventListener('click', function () {
       var val = parseInt(input.value, 10);
       if (isNaN(val)) { fb.className = 'feedback no'; fb.textContent = 'Bitte eine Zahl eingeben'; return; }
-      if (val === current.ans) { var up = addPoints(pts); fb.className = 'feedback ok'; fb.textContent = 'Richtig! +' + pts + ' Punkte \uD83C\uDF1F'; btn.disabled = true; setTimeout(function () { celebrate(up, renderRechnen); }, 900); }
-      else { fb.className = 'feedback no'; fb.textContent = 'Fast! Versuch es nochmal.'; input.value = ''; input.focus(); }
+      if (val === current.ans) { var up = addPoints(pts); logActivity({ type: 'rechnen', ok: true, diff: state.difficulty, pts: pts }); fb.className = 'feedback ok'; fb.textContent = 'Richtig! +' + pts + ' Punkte \uD83C\uDF1F'; btn.disabled = true; setTimeout(function () { celebrate(up, renderRechnen); }, 900); }
+      else { logActivity({ type: 'rechnen', ok: false, diff: state.difficulty, q: current.q, given: input.value, correct: current.ans }); fb.className = 'feedback no'; fb.textContent = 'Fast! Versuch es nochmal.'; input.value = ''; input.focus(); }
     });
   }
 
   // ---- Logik: klar abgestufte Schwierigkeit ----
-  // Leicht  = nur einfache, AUFSTEIGENDE Reihen / kleine Zahlen / kein Lesen
-  // Mittel  = auf- und absteigend, Zahlen bis ~50
-  // Schwer  = gro\u00dfe Schritte, Verdopplungsreihen, Zahlen bis ~200
   function newPattern() {
     var d = state.difficulty; var seq, answer, step;
     if (d === 'leicht') {
@@ -306,7 +352,7 @@
     }
     var maxN = d === 'schwer' ? 25 : 10;
     if (rnd(0, 1) === 0) { var n2 = rnd(2, maxN); var a2 = n2 * 2; return { anleitung: 'Rechne im Kopf!', frage: 'Das Doppelte von ' + n2 + ' ist?', options: numOptions(a2, [a2 + 2, a2 - 2, n2]), correct: String(a2) }; }
-    else { var m = rnd(2, maxN) * 2; var h = m / 2; return { anleitung: 'Rechne im Kopf!', frage: 'Die H\u00e4lfte von ' + m + ' ist?', options: numOptions(h, [h + 1, h - 1, m]), correct: String(h) }; }
+    else { var m = rnd(2, maxN) * 2; var hh = m / 2; return { anleitung: 'Rechne im Kopf!', frage: 'Die H\u00e4lfte von ' + m + ' ist?', options: numOptions(hh, [hh + 1, hh - 1, m]), correct: String(hh) }; }
   }
   function newCount() {
     var d = state.difficulty; var lo = d === 'leicht' ? 3 : (d === 'schwer' ? 12 : 6); var hi = d === 'leicht' ? 7 : (d === 'schwer' ? 20 : 12);
@@ -362,11 +408,12 @@
         b.addEventListener('click', function () {
           if (done) return;
           if (opt === q.correct) {
-            done = true; var up = addPoints(pts);
+            done = true; var up = addPoints(pts); logActivity({ type: 'logik', ok: true, diff: state.difficulty, pts: pts });
             b.style.background = '#c8f0e4'; b.style.borderColor = '#2a9d8f';
             fb.className = 'feedback ok'; fb.textContent = 'Richtig! +' + pts + ' \uD83C\uDF1F';
             setTimeout(function () { celebrate(up, renderLogik); }, 900);
           } else {
+            logActivity({ type: 'logik', ok: false, diff: state.difficulty, q: (q.frage || q.anleitung), given: opt, correct: q.correct });
             b.style.background = '#ffd6d6'; b.style.borderColor = '#e63946';
             fb.className = 'feedback no'; fb.textContent = 'Probier es nochmal!';
           }
@@ -395,8 +442,8 @@
     var input = document.getElementById('wordin');
     btn.addEventListener('click', function () {
       var val = (input.value || '').trim().toLowerCase();
-      if (val === word.toLowerCase()) { var up = addPoints(pts); fb.className = 'feedback ok'; fb.textContent = 'Super! Das Wort war "' + word + '". +' + pts + ' \uD83C\uDF1F'; btn.disabled = true; setTimeout(function () { celebrate(up, renderSchreiben); }, 1100); }
-      else { fb.className = 'feedback no'; fb.textContent = 'Noch nicht ganz. Probier es nochmal!'; }
+      if (val === word.toLowerCase()) { var up = addPoints(pts); logActivity({ type: 'schreiben', ok: true, diff: state.difficulty, pts: pts }); fb.className = 'feedback ok'; fb.textContent = 'Super! Das Wort war "' + word + '". +' + pts + ' \uD83C\uDF1F'; btn.disabled = true; setTimeout(function () { celebrate(up, renderSchreiben); }, 1100); }
+      else { logActivity({ type: 'schreiben', ok: false, diff: state.difficulty, q: 'Diktat', given: input.value, correct: word }); fb.className = 'feedback no'; fb.textContent = 'Noch nicht ganz. Probier es nochmal!'; }
     });
   }
 
@@ -423,7 +470,7 @@
     app().appendChild(el('<div class="card"><div class="readtext">' + text + '</div></div>'));
     app().appendChild(el('<div class="note">Maxime liest den Text laut vor. Danach gibt ein Elternteil per PIN die Punkte frei.</div>'));
     var btn = el('<button class="btn">\u2705 Vorgelesen - ' + pts + ' Punkte freigeben</button>');
-    btn.addEventListener('click', function () { askPin(function () { var up = addPoints(pts); showAward(up, renderLesen); }); });
+    btn.addEventListener('click', function () { askPin(function () { var up = addPoints(pts); logActivity({ type: 'lesen', ok: true, diff: state.difficulty, pts: pts }); showAward(up, renderLesen); }); });
     app().appendChild(btn);
   }
 
@@ -438,7 +485,7 @@
   function choosePoints(backFn) {
     clear(); app().appendChild(el('<div class="screen-title">Punkte vergeben</div>')); app().appendChild(el('<div class="note">Wie gut hat Maxime die Aufgabe gel\u00f6st?</div>'));
     var opts = [['Gut gemacht', 5], ['Sehr gut', 10], ['Spitze!', 15]];
-    for (var i = 0; i < opts.length; i++) { (function (o) { var b = el('<button class="btn green">' + o[0] + ' (+' + o[1] + ')</button>'); b.addEventListener('click', function () { var up = addPoints(o[1]); showAward(up, backFn); }); app().appendChild(b); })(opts[i]); }
+    for (var i = 0; i < opts.length; i++) { (function (o) { var b = el('<button class="btn green">' + o[0] + ' (+' + o[1] + ')</button>'); b.addEventListener('click', function () { var up = addPoints(o[1]); logActivity({ type: 'schule', ok: true, pts: o[1] }); showAward(up, backFn); }); app().appendChild(b); })(opts[i]); }
   }
   function showAward(up, backFn) {
     clear(); app().appendChild(el('<div class="header" style="margin-top:30px"><div class="badge-big">\u2B50</div><div class="screen-title">Punkte gespeichert!</div><div class="points">' + state.points + ' Punkte</div></div>'));
