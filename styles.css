@@ -1,0 +1,58 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0); }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+  background: #fff7e6;
+  color: #2b2b2b;
+  -webkit-text-size-adjust: 100%;
+}
+#app { max-width: 480px; margin: 0 auto; padding: 12px; }
+
+.header { text-align: center; margin-bottom: 10px; }
+.badge-big { font-size: 56px; line-height: 1; }
+.level-label { font-size: 15px; color: #555; margin-top: 2px; }
+.points { font-size: 30px; font-weight: bold; color: #d1471c; margin-top: 2px; }
+
+.progress-wrap { background: #ffe0b3; border-radius: 10px; height: 16px; overflow: hidden; margin: 8px 0 4px; }
+.progress-bar { background: #ff9f1c; height: 100%; width: 0%; -webkit-transition: width .4s; transition: width .4s; }
+.progress-text { font-size: 12px; color: #777; text-align: center; }
+
+.countdown { background: #3a86ff; color: #fff; border-radius: 14px; padding: 12px; text-align: center; margin: 12px 0; }
+.countdown .num { font-size: 34px; font-weight: bold; }
+.countdown .lbl { font-size: 14px; opacity: .95; }
+
+.tiles { display: block; }
+.tile {
+  display: block; width: 100%; border: none; border-radius: 16px;
+  padding: 18px; margin: 10px 0; font-size: 22px; font-weight: bold;
+  color: #fff; text-align: left; cursor: pointer;
+}
+.tile .emoji { font-size: 30px; margin-right: 10px; }
+.tile.rechnen { background: #2a9d8f; }
+.tile.schreiben { background: #e76f51; }
+.tile.lesen { background: #8338ec; }
+.tile.schule { background: #f4a261; color: #3a2200; }
+
+.screen-title { font-size: 24px; font-weight: bold; margin: 8px 0 14px; }
+.back-btn { background: #eee; border: none; border-radius: 10px; padding: 8px 14px; font-size: 16px; margin-bottom: 10px; cursor: pointer; }
+
+.card { background: #fff; border-radius: 16px; padding: 18px; box-shadow: 0 2px 6px rgba(0,0,0,.08); margin-bottom: 14px; }
+.question { font-size: 40px; font-weight: bold; text-align: center; margin: 10px 0 16px; }
+.bigfield { width: 100%; font-size: 30px; text-align: center; padding: 12px; border: 2px solid #ccc; border-radius: 12px; }
+
+.btn { display: block; width: 100%; border: none; border-radius: 14px; padding: 16px; font-size: 20px; font-weight: bold; color: #fff; background: #3a86ff; margin-top: 12px; cursor: pointer; }
+.btn.green { background: #2a9d8f; }
+.btn.gray { background: #888; }
+.btn.small { font-size: 16px; padding: 12px; }
+
+.feedback { text-align: center; font-size: 22px; font-weight: bold; min-height: 28px; margin-top: 12px; }
+.feedback.ok { color: #2a9d8f; }
+.feedback.no { color: #e63946; }
+
+.readtext { font-size: 22px; line-height: 1.6; }
+.pin-dots { text-align: center; font-size: 30px; letter-spacing: 8px; min-height: 36px; }
+.keypad { display: -webkit-box; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
+.key { -webkit-box-flex: 1; width: 30%; margin: 1.5%; font-size: 24px; padding: 16px 0; border: none; border-radius: 12px; background: #eee; cursor: pointer; }
+.note { font-size: 13px; color: #888; text-align: center; margin-top: 8px; }
+.choice-row { display: -webkit-box; display: flex; }
+.choice-row .btn { margin: 6px; }

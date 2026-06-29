@@ -1,0 +1,9 @@
+{
+  "name": "Maxime-Quiz",
+  "short_name": "Maxime",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fff7e6",
+  "theme_color": "#3a86ff",
+  "icons": []
+}
