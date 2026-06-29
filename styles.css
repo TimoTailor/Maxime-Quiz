@@ -32,6 +32,7 @@ body {
 .tile.schreiben { background: #e76f51; }
 .tile.lesen { background: #8338ec; }
 .tile.schule { background: #f4a261; color: #3a2200; }
+.tile.logik { background: #ef476f; }
 
 .screen-title { font-size: 24px; font-weight: bold; margin: 8px 0 14px; }
 .back-btn { background: #eee; border: none; border-radius: 10px; padding: 8px 14px; font-size: 16px; margin-bottom: 10px; cursor: pointer; }
@@ -39,6 +40,13 @@ body {
 .card { background: #fff; border-radius: 16px; padding: 18px; box-shadow: 0 2px 6px rgba(0,0,0,.08); margin-bottom: 14px; }
 .question { font-size: 40px; font-weight: bold; text-align: center; margin: 10px 0 16px; }
 .bigfield { width: 100%; font-size: 30px; text-align: center; padding: 12px; border: 2px solid #ccc; border-radius: 12px; }
+
+.anleitung { font-size: 24px; font-weight: bold; text-align: center; color: #333; }
+.anleitung-row { display: -webkit-box; display: flex; -webkit-box-align: center; align-items: center; -webkit-box-pack: center; justify-content: center; margin-bottom: 6px; }
+.speak-btn { background: #ffd166; border: none; border-radius: 50%; width: 44px; height: 44px; font-size: 22px; margin-left: 10px; cursor: pointer; }
+.opt-btn { display: block; width: 100%; border: 2px solid #ddd; background: #fff; border-radius: 14px; padding: 18px; font-size: 30px; font-weight: bold; margin: 8px 0; cursor: pointer; }
+.opt-grid { display: -webkit-box; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
+.opt-grid .opt-btn { width: 46%; margin: 2%; }
 
 .btn { display: block; width: 100%; border: none; border-radius: 14px; padding: 16px; font-size: 20px; font-weight: bold; color: #fff; background: #3a86ff; margin-top: 12px; cursor: pointer; }
 .btn.green { background: #2a9d8f; }
