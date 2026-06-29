@@ -9,6 +9,8 @@
   var DEFAULT_PIN = '1234';
   var LAST_SCHOOLDAY = '2026-07-17';
   var FIRST_SCHOOLDAY = '2026-09-02';
+  var BIRTHDAY_MONTH = 7; var BIRTHDAY_DAY = 24; var BIRTHDAY_BONUS = 50;
+  var THEMES = [['orange','#ff9f1c'],['blau','#3a86ff'],['gruen','#2a9d8f'],['pink','#ef476f'],['lila','#8338ec']];
 
   var WORDS = ['Apfel','Sonne','Blume','Wasser','Schule','Hund','Katze','Baum','Haus','Auto','Buch','Tisch','Garten','Wolke','Stern','Mond','Fisch','Vogel','Banane','Brot'];
   var TEXTS = [
@@ -25,19 +27,31 @@
   ];
 
   // ---- State ----
-  function defaultState() { return { points: 0, completed: 0, pin: DEFAULT_PIN, pinSet: false }; }
+  function defaultState() { return { points: 0, completed: 0, pin: DEFAULT_PIN, pinSet: false, streak: 0, lastActive: null, theme: 'orange', bdayBonusYear: null }; }
   function load() {
-    try { var raw = localStorage.getItem('maximeState'); if (!raw) return defaultState(); var s = JSON.parse(raw); if (typeof s.points !== 'number') return defaultState(); return s; }
+    try { var raw = localStorage.getItem('maximeState'); if (!raw) return defaultState(); var s = JSON.parse(raw); if (typeof s.points !== 'number') return defaultState();
+      if (typeof s.streak !== 'number') s.streak = 0; if (!s.lastActive) s.lastActive = null; if (!s.theme) s.theme = 'orange'; if (typeof s.bdayBonusYear === 'undefined') s.bdayBonusYear = null; return s; }
     catch (e) { return defaultState(); }
   }
   function save(s) { try { localStorage.setItem('maximeState', JSON.stringify(s)); } catch (e) {} }
   var state = load();
 
+  // ---- Datum / Streak ----
+  function dStr(d) { var m = d.getMonth() + 1; var day = d.getDate(); return d.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (day < 10 ? '0' + day : day); }
+  function todayStr() { return dStr(new Date()); }
+  function yesterdayStr() { var d = new Date(); d.setDate(d.getDate() - 1); return dStr(d); }
+  function updateStreak() {
+    var t = todayStr(); if (state.lastActive === t) return;
+    if (state.lastActive === yesterdayStr()) { state.streak = (state.streak || 0) + 1; } else { state.streak = 1; }
+    state.lastActive = t; save(state);
+  }
+  function displayStreak() { if (state.lastActive === todayStr() || state.lastActive === yesterdayStr()) return state.streak || 0; return 0; }
+
   // ---- Helpers ----
   function levelFor(points) { var lvl = 1; for (var i = 0; i < LEVELS.length; i++) { if (points >= LEVELS[i]) lvl = i + 1; } return lvl; }
   function badgeFor(points) { return BADGES[levelFor(points) - 1]; }
   function nextThreshold(points) { for (var i = 0; i < LEVELS.length; i++) { if (points < LEVELS[i]) return LEVELS[i]; } return LEVELS[LEVELS.length - 1]; }
-  function addPoints(n) { var before = levelFor(state.points); state.points += n; state.completed += 1; save(state); return levelFor(state.points) > before; }
+  function addPoints(n) { var before = levelFor(state.points); state.points += n; state.completed += 1; updateStreak(); save(state); return levelFor(state.points) > before; }
   function daysUntil(dateStr) { var target = new Date(dateStr + 'T00:00:00'); var now = new Date(); var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()); return Math.ceil((target - t0) / (1000 * 60 * 60 * 24)); }
   function el(html) { var d = document.createElement('div'); d.innerHTML = html; return d.firstChild; }
   function app() { return document.getElementById('app'); }
@@ -50,6 +64,15 @@
     if (state.points === 0) return 'Lass uns starten! \uD83D\uDE80';
     var msgs = ['Weiter so!', 'Du schaffst das!', 'Toll gemacht!', 'Super dabei!', 'Du wirst immer besser!'];
     return msgs[rnd(0, msgs.length - 1)] + ' \uD83D\uDCAA';
+  }
+  function applyTheme(name) { try { document.body.className = 'theme-' + name; } catch (e) {} }
+
+  // ---- Geburtstag ----
+  function isBirthday() { var d = new Date(); return (d.getMonth() + 1) === BIRTHDAY_MONTH && d.getDate() === BIRTHDAY_DAY; }
+  function maybeBirthdayBonus() {
+    if (!isBirthday()) return;
+    var yr = new Date().getFullYear();
+    if (state.bdayBonusYear !== yr) { state.points += BIRTHDAY_BONUS; state.bdayBonusYear = yr; save(state); }
   }
 
   // ---- Countdown ----
@@ -64,13 +87,20 @@
   // ---- Home ----
   function renderHome() {
     clear();
+    maybeBirthdayBonus();
+    if (isBirthday()) {
+      app().appendChild(el('<div class="birthday"><span class="big">\uD83C\uDF82</span>Herzlichen Gl\u00fcckwunsch zum Geburtstag, ' + KIND_NAME + '!<br>+' + BIRTHDAY_BONUS + ' Geschenk-Punkte \uD83C\uDF81</div>'));
+    }
     var lvl = levelFor(state.points); var badge = badgeFor(state.points); var next = nextThreshold(state.points);
     var prev = LEVELS[lvl - 1]; var span = next - prev; if (span <= 0) span = 1;
     var pct = Math.min(100, Math.round(((state.points - prev) / span) * 100)); var atMax = lvl >= LEVELS.length;
+    var streak = displayStreak();
+    var streakHtml = streak > 0 ? '<div class="streak">\uD83D\uDD25 ' + streak + (streak === 1 ? ' Tag' : ' Tage') + ' in Folge ge\u00fcbt!</div>' : '';
     var head = el(
       '<div class="header">' +
       '<div class="greeting">' + greeting() + ', ' + KIND_NAME + '! \uD83D\uDC4B</div>' +
       '<div class="submotto">' + motto() + '</div>' +
+      streakHtml +
       '<div class="badge-big">' + badge + '</div>' +
       '<div class="level-label">Level ' + lvl + '</div>' +
       '<div class="points">' + state.points + ' Punkte</div>' +
@@ -92,6 +122,18 @@
       (function (d) { var b = el('<button class="tile ' + d[0] + '"><span class="emoji">' + d[1] + '</span>' + d[2] + '</button>'); b.addEventListener('click', function () { route(d[0]); }); tiles.appendChild(b); })(defs[i]);
     }
     app().appendChild(tiles);
+    // Farbschema-Auswahl
+    app().appendChild(el('<div class="theme-title">\uD83C\uDF08 W\u00e4hle deine Farbe</div>'));
+    var row = el('<div class="theme-row"></div>');
+    for (var j = 0; j < THEMES.length; j++) {
+      (function (th) {
+        var active = state.theme === th[0] ? ' active' : '';
+        var b = el('<button class="color-dot' + active + '" style="background:' + th[1] + '"></button>');
+        b.addEventListener('click', function () { state.theme = th[0]; save(state); applyTheme(th[0]); renderHome(); });
+        row.appendChild(b);
+      })(THEMES[j]);
+    }
+    app().appendChild(row);
     app().appendChild(el('<div class="note">F\u00fcr Eltern: PIN-Bereiche bei Lesen &amp; Schulunterlagen</div>'));
   }
 
@@ -280,5 +322,6 @@
     else renderHome();
   }
 
+  applyTheme(state.theme || 'orange');
   renderHome();
 })();

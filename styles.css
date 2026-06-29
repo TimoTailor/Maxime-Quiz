@@ -2,15 +2,24 @@
 html, body { margin: 0; padding: 0; }
 body {
   font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
-  background: #fff7e6;
   color: #2b2b2b;
   -webkit-text-size-adjust: 100%;
+  -webkit-transition: background .3s; transition: background .3s;
 }
+body.theme-orange { background: #fff7e6; }
+body.theme-blau { background: #e6f2ff; }
+body.theme-gruen { background: #e7f7ee; }
+body.theme-pink { background: #ffe9f3; }
+body.theme-lila { background: #f1e9ff; }
 #app { max-width: 480px; margin: 0 auto; padding: 12px; }
+
+.birthday { background: -webkit-linear-gradient(left, #ffd166, #ff6b9d); background: linear-gradient(90deg, #ffd166, #ff6b9d); color: #5a2a00; border-radius: 18px; padding: 16px; text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 12px; -webkit-box-shadow: 0 4px 0 #d98b00; box-shadow: 0 4px 0 #d98b00; }
+.birthday .big { font-size: 40px; display: block; }
 
 .header { text-align: center; margin-bottom: 10px; }
 .greeting { font-size: 26px; font-weight: bold; color: #3a86ff; margin: 4px 0 2px; }
-.submotto { font-size: 15px; color: #777; margin-bottom: 6px; }
+.submotto { font-size: 15px; color: #777; margin-bottom: 4px; }
+.streak { font-size: 17px; font-weight: bold; color: #e76f51; margin: 2px 0 6px; }
 .badge-big { font-size: 84px; line-height: 1; }
 .level-label { font-size: 30px; font-weight: bold; color: #ef476f; margin-top: 4px; }
 .points { font-size: 26px; font-weight: bold; color: #d1471c; margin-top: 4px; }
@@ -36,6 +45,11 @@ body {
 .tile.lesen { background: #8338ec; }
 .tile.schule { background: #f4a261; color: #3a2200; }
 .tile.logik { background: #ef476f; }
+
+.theme-title { text-align: center; font-size: 15px; color: #888; margin-top: 16px; }
+.theme-row { display: -webkit-box; display: flex; -webkit-box-pack: center; justify-content: center; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: 6px 0 4px; }
+.color-dot { width: 42px; height: 42px; border-radius: 50%; margin: 6px; border: 3px solid #fff; -webkit-box-shadow: 0 0 0 2px #ccc; box-shadow: 0 0 0 2px #ccc; cursor: pointer; padding: 0; }
+.color-dot.active { -webkit-box-shadow: 0 0 0 4px #333; box-shadow: 0 0 0 4px #333; }
 
 .screen-title { font-size: 24px; font-weight: bold; margin: 8px 0 14px; }
 .back-btn { background: #eee; border: none; border-radius: 10px; padding: 8px 14px; font-size: 16px; margin-bottom: 10px; cursor: pointer; }
@@ -65,5 +79,3 @@ body {
 .keypad { display: -webkit-box; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
 .key { -webkit-box-flex: 1; width: 30%; margin: 1.5%; font-size: 24px; padding: 16px 0; border: none; border-radius: 12px; background: #eee; cursor: pointer; }
 .note { font-size: 13px; color: #888; text-align: center; margin-top: 8px; }
-.choice-row { display: -webkit-box; display: flex; }
-.choice-row .btn { margin: 6px; }
