@@ -274,33 +274,42 @@
     });
   }
 
-  // ---- Logik (nach Schwierigkeit) ----
+  // ---- Logik: klar abgestufte Schwierigkeit ----
+  // Leicht  = nur einfache, AUFSTEIGENDE Reihen / kleine Zahlen / kein Lesen
+  // Mittel  = auf- und absteigend, Zahlen bis ~50
+  // Schwer  = gro\u00dfe Schritte, Verdopplungsreihen, Zahlen bis ~200
   function newPattern() {
-    var d = state.difficulty; var seq, answer, step, mode;
+    var d = state.difficulty; var seq, answer, step;
     if (d === 'leicht') {
-      mode = rnd(1, 2);
-      if (mode === 1) { var st = rnd(1, 5); step = rnd(1, 3); seq = [st, st + step, st + step * 2, st + step * 3]; answer = st + step * 4; }
-      else { step = rnd(1, 3); var s = rnd(15, 30); seq = [s, s - step, s - step * 2, s - step * 3]; answer = s - step * 4; }
+      var steps = [1, 2, 2, 5];
+      step = steps[rnd(0, steps.length - 1)];
+      var st = rnd(1, 5);
+      seq = [st, st + step, st + step * 2, st + step * 3];
+      answer = st + step * 4;
     } else if (d === 'schwer') {
-      mode = rnd(1, 3);
-      if (mode === 1) { var st2 = rnd(3, 9); step = rnd(4, 9); seq = [st2, st2 + step, st2 + step * 2, st2 + step * 3]; answer = st2 + step * 4; }
-      else if (mode === 2) { step = rnd(4, 9); var s2 = rnd(50, 90); seq = [s2, s2 - step, s2 - step * 2, s2 - step * 3]; answer = s2 - step * 4; }
+      var mode = rnd(1, 3);
+      if (mode === 1) { var st2 = rnd(3, 9); step = rnd(5, 9); seq = [st2, st2 + step, st2 + step * 2, st2 + step * 3]; answer = st2 + step * 4; }
+      else if (mode === 2) { step = rnd(5, 9); var s2 = rnd(55, 95); seq = [s2, s2 - step, s2 - step * 2, s2 - step * 3]; answer = s2 - step * 4; }
       else { var bb = rnd(2, 4); seq = [bb, bb * 2, bb * 4, bb * 8]; answer = bb * 16; step = bb * 8; }
     } else {
-      mode = rnd(1, 3);
-      if (mode === 1) { var st3 = rnd(2, 9); step = rnd(2, 9); seq = [st3, st3 + step, st3 + step * 2, st3 + step * 3]; answer = st3 + step * 4; }
-      else if (mode === 2) { step = rnd(2, 9); var s3 = rnd(40, 80); seq = [s3, s3 - step, s3 - step * 2, s3 - step * 3]; answer = s3 - step * 4; }
-      else { var b3 = rnd(1, 3); seq = [b3, b3 * 2, b3 * 4, b3 * 8]; answer = b3 * 16; step = b3 * 8; }
+      var mode2 = rnd(1, 2);
+      if (mode2 === 1) { var st3 = rnd(2, 10); step = rnd(2, 5); seq = [st3, st3 + step, st3 + step * 2, st3 + step * 3]; answer = st3 + step * 4; }
+      else { step = rnd(2, 5); var s3 = rnd(28, 48); seq = [s3, s3 - step, s3 - step * 2, s3 - step * 3]; answer = s3 - step * 4; }
     }
     return { anleitung: 'Welche Zahl kommt als N\u00e4chstes?', frage: seq.join('   ') + '   ?', options: numOptions(answer, [answer + step, answer - step, answer + 1]), correct: String(answer) };
   }
   function newDoubleHalf() {
-    var d = state.difficulty; var maxN = d === 'leicht' ? 6 : (d === 'schwer' ? 20 : 15);
-    if (rnd(0, 1) === 0) { var n = rnd(2, maxN); var ans = n * 2; return { anleitung: 'Rechne im Kopf!', frage: 'Das Doppelte von ' + n + ' ist?', options: numOptions(ans, [ans + 2, ans - 2, n]), correct: String(ans) }; }
-    else { var m = rnd(1, maxN) * 2; var h = m / 2; return { anleitung: 'Rechne im Kopf!', frage: 'Die H\u00e4lfte von ' + m + ' ist?', options: numOptions(h, [h + 1, h - 1, m]), correct: String(h) }; }
+    var d = state.difficulty;
+    if (d === 'leicht') {
+      var n = rnd(1, 5); var ans = n * 2;
+      return { anleitung: 'Rechne im Kopf!', frage: 'Das Doppelte von ' + n + ' ist?', options: numOptions(ans, [ans + 1, ans - 1, n]), correct: String(ans) };
+    }
+    var maxN = d === 'schwer' ? 25 : 10;
+    if (rnd(0, 1) === 0) { var n2 = rnd(2, maxN); var a2 = n2 * 2; return { anleitung: 'Rechne im Kopf!', frage: 'Das Doppelte von ' + n2 + ' ist?', options: numOptions(a2, [a2 + 2, a2 - 2, n2]), correct: String(a2) }; }
+    else { var m = rnd(2, maxN) * 2; var h = m / 2; return { anleitung: 'Rechne im Kopf!', frage: 'Die H\u00e4lfte von ' + m + ' ist?', options: numOptions(h, [h + 1, h - 1, m]), correct: String(h) }; }
   }
   function newCount() {
-    var d = state.difficulty; var lo = d === 'leicht' ? 3 : (d === 'schwer' ? 10 : 6); var hi = d === 'leicht' ? 8 : (d === 'schwer' ? 20 : 13);
+    var d = state.difficulty; var lo = d === 'leicht' ? 3 : (d === 'schwer' ? 12 : 6); var hi = d === 'leicht' ? 7 : (d === 'schwer' ? 20 : 12);
     var icons = ['\uD83D\uDE9C','\uD83D\uDE99','\uD83D\uDE9A','\uD83E\uDDF1','\u26BD','\uD83C\uDFC7']; var ic = icons[rnd(0, icons.length - 1)];
     var n = rnd(lo, hi); var line = ''; for (var i = 0; i < n; i++) line += ic + ' ';
     return { anleitung: 'Wie viele siehst du? Z\u00e4hle genau!', frage: line, options: numOptions(n, [n + 1, n - 1, n + 2]), correct: String(n) };
@@ -316,7 +325,7 @@
     return { anleitung: 'Was passt nicht zu den anderen?', frage: '', options: opts, correct: odd };
   }
   function newBiggest() {
-    var d = state.difficulty; var lo = d === 'leicht' ? 1 : (d === 'schwer' ? 50 : 11); var hi = d === 'leicht' ? 20 : (d === 'schwer' ? 300 : 99);
+    var d = state.difficulty; var lo = 1; var hi = d === 'leicht' ? 10 : (d === 'schwer' ? 200 : 50);
     var nums = []; while (nums.length < 3) { var x = rnd(lo, hi); if (nums.indexOf(x) < 0) nums.push(x); }
     var big = Math.max(nums[0], nums[1], nums[2]);
     return { anleitung: 'Welche Zahl ist am gr\u00f6\u00dften?', frage: '', options: shuffle(nums.slice()).map(String), correct: String(big) };
@@ -326,7 +335,12 @@
     var f = facts[rnd(0, facts.length - 1)];
     return { anleitung: 'Stimmt das? Lies genau!', frage: f[0], options: ['Ja', 'Nein'], correct: f[1] ? 'Ja' : 'Nein' };
   }
-  function newLogic() { var g = [newPattern, newDoubleHalf, newCount, newOddOne, newBiggest, newTrueFalse][rnd(0, 5)]; return g(); }
+  function newLogic() {
+    var d = state.difficulty; var pool;
+    if (d === 'leicht') pool = [newPattern, newDoubleHalf, newCount, newOddOne, newBiggest];
+    else pool = [newPattern, newDoubleHalf, newCount, newOddOne, newBiggest, newTrueFalse];
+    return pool[rnd(0, pool.length - 1)]();
+  }
 
   function renderLogik() {
     clear(); app().appendChild(backBar()); app().appendChild(el('<div class="screen-title">\uD83E\uDDE0 Logik</div>'));
