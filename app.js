@@ -31,7 +31,7 @@
   function defaultState() { return { points: 0, completed: 0, pin: DEFAULT_PIN, pinSet: false, streak: 0, lastActive: null, theme: 'orange', bdayBonusYear: null }; }
   function load() {
     try { var raw = localStorage.getItem('maximeState'); if (!raw) return defaultState(); var s = JSON.parse(raw); if (typeof s.points !== 'number') return defaultState();
-      if (typeof s.streak !== 'number') s.streak = 0; if (!s.lastActive) s.lastActive = null; if (!s.theme) s.theme = 'orange'; if (typeof s.bdayBonusYear === 'undefined') s.bdayBonusYear = null; return s; }
+      if (typeof s.streak !== 'number') s.streak = 0; if (!s.lastActive) s.lastActive = null; if (!s.theme) s.theme = 'orange'; if (typeof s.bdayBonusYear === 'undefined') s.bdayBonusYear = null; if (!s.pin) s.pin = DEFAULT_PIN; return s; }
     catch (e) { return defaultState(); }
   }
   function save(s) { try { localStorage.setItem('maximeState', JSON.stringify(s)); } catch (e) {} }
@@ -140,9 +140,36 @@
     }
     app().appendChild(row);
     app().appendChild(el('<div class="note">F\u00fcr Eltern: PIN-Bereiche bei Lesen &amp; Schulunterlagen</div>'));
+    var pBtn = el('<button class="btn gray small">\u2699\uFE0F Eltern-Bereich</button>');
+    pBtn.addEventListener('click', function () { askPin(renderParentArea); });
+    app().appendChild(pBtn);
   }
 
   function backBar() { var b = el('<button class="back-btn">\u2190 Zur\u00fcck</button>'); b.addEventListener('click', renderHome); return b; }
+
+  // ---- Eltern-Bereich ----
+  function renderParentArea() {
+    clear(); app().appendChild(backBar()); app().appendChild(el('<div class="screen-title">\u2699\uFE0F Eltern-Bereich</div>'));
+    app().appendChild(el('<div class="card"><div class="readtext">Aktueller Stand:<br><b>' + state.points + ' Punkte</b> \u00b7 Level ' + levelFor(state.points) + ' (' + badgeNameFor(state.points) + ')</div></div>'));
+    var resetBtn = el('<button class="btn" style="background:#e63946">\uD83D\uDDD1\uFE0F Fortschritt zur\u00fccksetzen</button>');
+    resetBtn.addEventListener('click', confirmReset);
+    app().appendChild(resetBtn);
+    app().appendChild(el('<div class="note">Setzt Punkte, Level und die Tages-Serie auf null zur\u00fcck. Farbe und PIN bleiben erhalten.</div>'));
+  }
+  function confirmReset() {
+    clear(); app().appendChild(el('<div class="screen-title">Wirklich zur\u00fccksetzen?</div>'));
+    app().appendChild(el('<div class="card"><div class="readtext">Alle Punkte und Level von ' + KIND_NAME + ' werden gel\u00f6scht. Das kann nicht r\u00fcckg\u00e4ngig gemacht werden.</div></div>'));
+    var yes = el('<button class="btn" style="background:#e63946">Ja, alles zur\u00fccksetzen</button>');
+    yes.addEventListener('click', function () { resetProgress(); renderResetDone(); });
+    var no = el('<button class="btn gray">Abbrechen</button>');
+    no.addEventListener('click', renderHome);
+    app().appendChild(yes); app().appendChild(no);
+  }
+  function resetProgress() { state.points = 0; state.completed = 0; state.streak = 0; state.lastActive = null; save(state); }
+  function renderResetDone() {
+    clear(); app().appendChild(el('<div class="header" style="margin-top:40px"><div class="badge-big">\u2705</div><div class="screen-title">Zur\u00fcckgesetzt!</div><div class="readtext">' + KIND_NAME + ' startet wieder bei 0 Punkten.</div></div>'));
+    var b = el('<button class="btn green">Zum Start</button>'); b.addEventListener('click', renderHome); app().appendChild(b);
+  }
 
   function celebrate(leveledUp, cb) {
     if (leveledUp) {
