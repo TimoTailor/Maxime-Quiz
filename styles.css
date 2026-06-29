@@ -9,17 +9,18 @@ body {
 #app { max-width: 480px; margin: 0 auto; padding: 12px; }
 
 .header { text-align: center; margin-bottom: 10px; }
-.badge-big { font-size: 56px; line-height: 1; }
-.level-label { font-size: 15px; color: #555; margin-top: 2px; }
-.points { font-size: 30px; font-weight: bold; color: #d1471c; margin-top: 2px; }
+.badge-big { font-size: 84px; line-height: 1; }
+.level-label { font-size: 30px; font-weight: bold; color: #ef476f; margin-top: 4px; }
+.points { font-size: 26px; font-weight: bold; color: #d1471c; margin-top: 4px; }
 
-.progress-wrap { background: #ffe0b3; border-radius: 10px; height: 16px; overflow: hidden; margin: 8px 0 4px; }
+.progress-wrap { background: #ffe0b3; border-radius: 10px; height: 18px; overflow: hidden; margin: 10px 0 4px; }
 .progress-bar { background: #ff9f1c; height: 100%; width: 0%; -webkit-transition: width .4s; transition: width .4s; }
-.progress-text { font-size: 12px; color: #777; text-align: center; }
+.progress-text { font-size: 13px; color: #777; text-align: center; }
 
-.countdown { background: #3a86ff; color: #fff; border-radius: 14px; padding: 12px; text-align: center; margin: 12px 0; }
-.countdown .num { font-size: 34px; font-weight: bold; }
-.countdown .lbl { font-size: 14px; opacity: .95; }
+.countdown { background: #ff6b35; color: #fff; border-radius: 18px; padding: 16px 14px; text-align: center; margin: 16px 0; -webkit-box-shadow: 0 5px 0 #d1471c; box-shadow: 0 5px 0 #d1471c; }
+.countdown .cd-emoji { font-size: 30px; line-height: 1; }
+.countdown .num { font-size: 48px; font-weight: bold; line-height: 1.1; }
+.countdown .lbl { font-size: 16px; font-weight: bold; opacity: .97; }
 
 .tiles { display: block; }
 .tile {

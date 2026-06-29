@@ -44,7 +44,7 @@
     if (toFerien > 0) { num = toFerien; lbl = toFerien === 1 ? 'Tag bis zu den Ferien!' : 'Tage bis zu den Ferien!'; }
     else if (toSchule > 0) { num = toSchule; lbl = toSchule === 1 ? 'Ferientag - sammle flei\u00dfig Punkte!' : 'Ferientage - sammle flei\u00dfig Punkte!'; }
     else { num = '\uD83C\uDF89'; lbl = 'Die Schule hat wieder begonnen!'; }
-    return '<div class="countdown"><div class="num">' + num + '</div><div class="lbl">' + lbl + '</div></div>';
+    return '<div class="countdown"><div class="cd-emoji">\u23F3</div><div class="num">' + num + '</div><div class="lbl">' + lbl + '</div></div>';
   }
 
   // ---- Home ----
@@ -56,10 +56,10 @@
     var head = el(
       '<div class="header">' +
       '<div class="badge-big">' + badge + '</div>' +
-      '<div class="level-label">Level ' + lvl + ' von ' + LEVELS.length + '</div>' +
+      '<div class="level-label">Level ' + lvl + '</div>' +
       '<div class="points">' + state.points + ' Punkte</div>' +
       '<div class="progress-wrap"><div class="progress-bar" style="width:' + pct + '%"></div></div>' +
-      '<div class="progress-text">' + (atMax ? 'H\u00f6chstes Level erreicht!' : (next - state.points) + ' Punkte bis zum n\u00e4chsten Level') + '</div>' +
+      '<div class="progress-text">' + (atMax ? 'H\u00f6chstes Level erreicht!' : 'Noch ' + (next - state.points) + ' Punkte bis zum n\u00e4chsten Level') + '</div>' +
       '</div>'
     );
     app().appendChild(head);
