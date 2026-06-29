@@ -11,9 +11,16 @@
 
   var WORDS = ['Apfel','Sonne','Blume','Wasser','Schule','Hund','Katze','Baum','Haus','Auto','Buch','Tisch','Garten','Wolke','Stern','Mond','Fisch','Vogel','Banane','Brot'];
   var TEXTS = [
-    'Der kleine Bagger gr\u00e4bt ein gro\u00dfes Loch. Er schaufelt Sand und Steine. Am Ende ist das Loch tief und breit.',
-    'Max f\u00e4hrt mit dem Traktor auf das Feld. Der Traktor brummt laut. Hinten zieht er einen gro\u00dfen Anh\u00e4nger.',
-    'Die Sonne scheint am Himmel. Die V\u00f6gel singen im Baum. Es ist ein sch\u00f6ner Sommertag.'
+    'Maxime spielt Fu\u00dfball mit seinem besten Freund Lennart. Lennart schie\u00dft den Ball. Maxime f\u00e4ngt ihn im Tor. "Gehalten!", ruft Maxime. Beide lachen laut.',
+    'Maxime sitzt am Schlagzeug. Er trommelt laut: bum, bum, tschak! Papa h\u00e4lt sich die Ohren zu und lacht. Maxime spielt einen tollen Takt.',
+    'Oma nimmt Maxime mit zum Pferd. Das Pferd hei\u00dft Bruno. Es ist gro\u00df und braun. Maxime gibt ihm einen Apfel. Bruno schnaubt zufrieden.',
+    'Opa und Maxime gehen zur Baustelle. Ein gro\u00dfer Bagger gr\u00e4bt im Sand. Der Kran hebt schwere Steine. Maxime staunt \u00fcber die Maschinen.',
+    'Maxime baut mit Lego einen gro\u00dfen Traktor. Er sucht die roten Steine. St\u00fcck f\u00fcr St\u00fcck wird der Traktor fertig. Am Ende rollt er \u00fcber den Tisch.',
+    'Maxime spielt mit seiner kleinen Schwester Florence. Er baut ihr einen Turm aus Lego. Florence klatscht und freut sich. Dann baut er noch einen.',
+    'Mama und Maxime backen einen Kuchen. Maxime r\u00fchrt den Teig. Es riecht nach Schokolade. Bald ist der Kuchen fertig und warm.',
+    'Am Samstag spielt die ganze Familie Fu\u00dfball. Papa steht im Tor. Mama schie\u00dft den Ball. Sogar Florence l\u00e4uft mit. Es macht gro\u00dfen Spa\u00df.',
+    'Lennart und Maxime bauen zusammen eine Baustelle aus Lego. Sie haben einen Bagger und einen Kran. "Achtung, schwerer Stein!", ruft Lennart. Die beiden spielen den ganzen Nachmittag.',
+    'Opa war fr\u00fcher Schlagzeuger. Heute zeigt er Maxime einen Takt. Bum, tschak, bum, tschak! Maxime spielt ihn nach. Opa ist stolz auf ihn.'
   ];
 
   // ---- State ----
