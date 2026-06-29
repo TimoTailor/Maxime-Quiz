@@ -2,6 +2,7 @@
   'use strict';
 
   // ---- Konfiguration ----
+  var KIND_NAME = 'Maxime';
   var LEVELS = [0, 50, 120, 210, 320, 450, 600, 780, 980, 1200];
   var BADGES = ['\uD83E\uDDF1','\uD83D\uDE99','\uD83D\uDE9C','\uD83D\uDEFB','\uD83D\uDE9A','\uD83C\uDFD7','\uD83D\uDEA7','\uD83D\uDE9B','\uD83C\uDFC6','\uD83D\uDC51'];
   var POINTS_PER_TASK = 10;
@@ -44,6 +45,12 @@
   function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
   function shuffle(arr) { for (var i = arr.length - 1; i > 0; i--) { var j = rnd(0, i); var t = arr[i]; arr[i] = arr[j]; arr[j] = t; } return arr; }
   function speak(txt) { try { if (window.speechSynthesis) { var u = new SpeechSynthesisUtterance(txt); u.lang = 'de-DE'; u.rate = 0.85; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } } catch (e) {} }
+  function greeting() { var h = new Date().getHours(); if (h < 11) return 'Guten Morgen'; if (h < 18) return 'Hallo'; return 'Guten Abend'; }
+  function motto() {
+    if (state.points === 0) return 'Lass uns starten! \uD83D\uDE80';
+    var msgs = ['Weiter so!', 'Du schaffst das!', 'Toll gemacht!', 'Super dabei!', 'Du wirst immer besser!'];
+    return msgs[rnd(0, msgs.length - 1)] + ' \uD83D\uDCAA';
+  }
 
   // ---- Countdown ----
   function countdownHtml() {
@@ -62,6 +69,8 @@
     var pct = Math.min(100, Math.round(((state.points - prev) / span) * 100)); var atMax = lvl >= LEVELS.length;
     var head = el(
       '<div class="header">' +
+      '<div class="greeting">' + greeting() + ', ' + KIND_NAME + '! \uD83D\uDC4B</div>' +
+      '<div class="submotto">' + motto() + '</div>' +
       '<div class="badge-big">' + badge + '</div>' +
       '<div class="level-label">Level ' + lvl + '</div>' +
       '<div class="points">' + state.points + ' Punkte</div>' +
@@ -91,7 +100,7 @@
   function celebrate(leveledUp, cb) {
     if (leveledUp) {
       clear();
-      app().appendChild(el('<div class="header" style="margin-top:40px"><div class="badge-big">' + badgeFor(state.points) + '</div><div class="screen-title">Neues Level ' + levelFor(state.points) + '! \uD83C\uDF89</div><div class="points">' + state.points + ' Punkte</div></div>'));
+      app().appendChild(el('<div class="header" style="margin-top:40px"><div class="badge-big">' + badgeFor(state.points) + '</div><div class="screen-title">Neues Level ' + levelFor(state.points) + ', ' + KIND_NAME + '! \uD83C\uDF89</div><div class="points">' + state.points + ' Punkte</div></div>'));
       var btn = el('<button class="btn green">Weiter</button>'); btn.addEventListener('click', cb); app().appendChild(btn);
     } else { cb(); }
   }
