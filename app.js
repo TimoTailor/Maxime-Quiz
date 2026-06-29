@@ -6,14 +6,17 @@
   var LEVELS = [0, 50, 120, 210, 320, 450, 600, 780, 980, 1200];
   var BADGES = ['\uD83E\uDDF1','\uD83D\uDE99','\uD83D\uDE9C','\uD83D\uDEFB','\uD83D\uDE9A','\uD83C\uDFD7','\uD83D\uDEA7','\uD83D\uDE9B','\uD83C\uDFC6','\uD83D\uDC51'];
   var BADGE_NAMES = ['Bau-Starter','Flitzer','Trecker-Fahrer','Pickup-Profi','Laster-Lenker','Kran-Kapit\u00e4n','Baustellen-Boss','Truck-Held','Pokal-Held','Lego-K\u00f6nig'];
-  var POINTS_PER_TASK = 10;
   var DEFAULT_PIN = '1234';
   var LAST_SCHOOLDAY = '2026-07-17';
   var FIRST_SCHOOLDAY = '2026-09-02';
   var BIRTHDAY_MONTH = 7; var BIRTHDAY_DAY = 24; var BIRTHDAY_BONUS = 50;
   var THEMES = [['orange','#ff9f1c'],['blau','#3a86ff'],['gruen','#2a9d8f'],['pink','#ef476f'],['lila','#8338ec']];
+  var POINTS_BY_DIFF = { leicht: 5, mittel: 10, schwer: 20 };
+  var DIFFS = [['leicht','Leicht',5],['mittel','Mittel',10],['schwer','Schwer',20]];
 
-  var WORDS = ['Apfel','Sonne','Blume','Wasser','Schule','Hund','Katze','Baum','Haus','Auto','Buch','Tisch','Garten','Wolke','Stern','Mond','Fisch','Vogel','Banane','Brot'];
+  var WORDS_LEICHT = ['Hund','Katze','Baum','Haus','Auto','Ball','Buch','Fisch','Mond','Hand','Tor','Ente'];
+  var WORDS_MITTEL = ['Apfel','Sonne','Blume','Schule','Tisch','Wolke','Stern','Vogel','Brot','Banane','Garten','Wasser'];
+  var WORDS_SCHWER = ['Schlagzeug','Traktor','Baustelle','Bagger','Familie','Geschichte','Kuchen','Freund','Schwester','Pferd','Sommer','Ferien'];
   var TEXTS = [
     'Maxime spielt Fu\u00dfball mit seinem besten Freund Lennart. Lennart schie\u00dft den Ball. Maxime f\u00e4ngt ihn im Tor. "Gehalten!", ruft Maxime. Beide lachen laut.',
     'Maxime sitzt am Schlagzeug. Er trommelt laut: bum, bum, tschak! Papa h\u00e4lt sich die Ohren zu und lacht. Maxime spielt einen tollen Takt.',
@@ -28,14 +31,16 @@
   ];
 
   // ---- State ----
-  function defaultState() { return { points: 0, completed: 0, pin: DEFAULT_PIN, pinSet: false, streak: 0, lastActive: null, theme: 'orange', bdayBonusYear: null, startHour: 7, endHour: 20 }; }
+  function defaultState() { return { points: 0, completed: 0, pin: DEFAULT_PIN, pinSet: false, streak: 0, lastActive: null, theme: 'orange', bdayBonusYear: null, startHour: 7, endHour: 20, difficulty: 'mittel' }; }
   function load() {
     try { var raw = localStorage.getItem('maximeState'); if (!raw) return defaultState(); var s = JSON.parse(raw); if (typeof s.points !== 'number') return defaultState();
-      if (typeof s.streak !== 'number') s.streak = 0; if (!s.lastActive) s.lastActive = null; if (!s.theme) s.theme = 'orange'; if (typeof s.bdayBonusYear === 'undefined') s.bdayBonusYear = null; if (!s.pin) s.pin = DEFAULT_PIN; if (typeof s.startHour !== 'number') s.startHour = 7; if (typeof s.endHour !== 'number') s.endHour = 20; return s; }
+      if (typeof s.streak !== 'number') s.streak = 0; if (!s.lastActive) s.lastActive = null; if (!s.theme) s.theme = 'orange'; if (typeof s.bdayBonusYear === 'undefined') s.bdayBonusYear = null; if (!s.pin) s.pin = DEFAULT_PIN; if (typeof s.startHour !== 'number') s.startHour = 7; if (typeof s.endHour !== 'number') s.endHour = 20; if (!s.difficulty) s.difficulty = 'mittel'; return s; }
     catch (e) { return defaultState(); }
   }
   function save(s) { try { localStorage.setItem('maximeState', JSON.stringify(s)); } catch (e) {} }
   var state = load();
+
+  function pointsPerTask() { return POINTS_BY_DIFF[state.difficulty] || 10; }
 
   // ---- Datum / Streak ----
   function dStr(d) { var m = d.getMonth() + 1; var day = d.getDate(); return d.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (day < 10 ? '0' + day : day); }
@@ -143,6 +148,19 @@
       (function (d) { var b = el('<button class="tile ' + d[0] + '"><span class="emoji">' + d[1] + '</span>' + d[2] + '</button>'); b.addEventListener('click', function () { route(d[0]); }); tiles.appendChild(b); })(defs[i]);
     }
     app().appendChild(tiles);
+    // Schwierigkeit
+    app().appendChild(el('<div class="theme-title">\u2B50 Schwierigkeit w\u00e4hlen</div>'));
+    var dRow = el('<div class="diff-row"></div>');
+    for (var k = 0; k < DIFFS.length; k++) {
+      (function (df) {
+        var active = state.difficulty === df[0] ? ' active' : '';
+        var b = el('<button class="diff-btn diff-' + df[0] + active + '">' + df[1] + '<small>' + df[2] + ' Punkte</small></button>');
+        b.addEventListener('click', function () { state.difficulty = df[0]; save(state); renderHome(); });
+        dRow.appendChild(b);
+      })(DIFFS[k]);
+    }
+    app().appendChild(dRow);
+    // Farbe
     app().appendChild(el('<div class="theme-title">\uD83C\uDF08 W\u00e4hle deine Farbe</div>'));
     var row = el('<div class="theme-row"></div>');
     for (var j = 0; j < THEMES.length; j++) {
@@ -166,7 +184,6 @@
   function renderParentArea() {
     clear(); app().appendChild(backBar()); app().appendChild(el('<div class="screen-title">\u2699\uFE0F Eltern-Bereich</div>'));
     app().appendChild(el('<div class="card"><div class="readtext">Aktueller Stand:<br><b>' + state.points + ' Punkte</b> \u00b7 Level ' + levelFor(state.points) + ' (' + badgeNameFor(state.points) + ')</div></div>'));
-    // Lernzeit
     var tCard = el('<div class="card"></div>');
     tCard.appendChild(el('<div class="readtext" style="text-align:center">\u23F0 Lernzeit</div>'));
     tCard.appendChild(el('<div class="readtext" style="text-align:center;margin:6px 0"><b>' + fmtHour(state.startHour) + ' - ' + fmtHour(state.endHour) + ' Uhr</b></div>'));
@@ -187,11 +204,10 @@
       function () { if (state.endHour < 24) { state.endHour++; save(state); renderParentArea(); } }));
     app().appendChild(tCard);
     app().appendChild(el('<div class="note">Au\u00dferhalb dieser Zeit zeigt die App eine Lernpause an.</div>'));
-    // Reset
     var resetBtn = el('<button class="btn" style="background:#e63946">\uD83D\uDDD1\uFE0F Fortschritt zur\u00fccksetzen</button>');
     resetBtn.addEventListener('click', confirmReset);
     app().appendChild(resetBtn);
-    app().appendChild(el('<div class="note">Setzt Punkte, Level und die Tages-Serie auf null zur\u00fcck. Farbe und Zeiten bleiben erhalten.</div>'));
+    app().appendChild(el('<div class="note">Setzt Punkte, Level und die Tages-Serie auf null zur\u00fcck. Farbe, Zeiten und Schwierigkeit bleiben erhalten.</div>'));
   }
   function confirmReset() {
     clear(); app().appendChild(el('<div class="screen-title">Wirklich zur\u00fccksetzen?</div>'));
@@ -218,15 +234,27 @@
 
   // ---- Rechnen ----
   function newMath() {
-    var type = rnd(1, 3); var a, b, q, ans;
-    if (type === 1) { a = rnd(1, 89); b = rnd(1, 100 - a); q = a + ' + ' + b; ans = a + b; }
-    else if (type === 2) { a = rnd(10, 100); b = rnd(1, a); q = a + ' \u2212 ' + b; ans = a - b; }
-    else { a = rnd(2, 5); b = rnd(2, 5); q = a + ' \u00D7 ' + b; ans = a * b; }
+    var d = state.difficulty; var a, b, q, ans, type;
+    if (d === 'leicht') {
+      type = rnd(1, 2);
+      if (type === 1) { a = rnd(1, 10); b = rnd(1, 10); q = a + ' + ' + b; ans = a + b; }
+      else { a = rnd(2, 20); b = rnd(1, a); q = a + ' \u2212 ' + b; ans = a - b; }
+    } else if (d === 'schwer') {
+      type = rnd(1, 3);
+      if (type === 1) { a = rnd(10, 90); b = rnd(10, 99); q = a + ' + ' + b; ans = a + b; }
+      else if (type === 2) { a = rnd(30, 100); b = rnd(1, a); q = a + ' \u2212 ' + b; ans = a - b; }
+      else { a = rnd(2, 10); b = rnd(2, 10); q = a + ' \u00D7 ' + b; ans = a * b; }
+    } else {
+      type = rnd(1, 3);
+      if (type === 1) { a = rnd(1, 89); b = rnd(1, 100 - a); q = a + ' + ' + b; ans = a + b; }
+      else if (type === 2) { a = rnd(10, 100); b = rnd(1, a); q = a + ' \u2212 ' + b; ans = a - b; }
+      else { a = rnd(2, 5); b = rnd(2, 5); q = a + ' \u00D7 ' + b; ans = a * b; }
+    }
     return { q: q, ans: ans };
   }
   function renderRechnen() {
     clear(); app().appendChild(backBar()); app().appendChild(el('<div class="screen-title">\uD83D\uDD22 Rechnen</div>'));
-    var current = newMath();
+    var current = newMath(); var pts = pointsPerTask();
     app().appendChild(el('<div class="card"><div class="question">' + current.q + ' = ?</div><input class="bigfield" type="number" pattern="[0-9]*" id="answer"></div>'));
     var fb = el('<div class="feedback"></div>'); var btn = el('<button class="btn green">Pr\u00fcfen</button>');
     app().appendChild(btn); app().appendChild(fb);
@@ -234,26 +262,40 @@
     btn.addEventListener('click', function () {
       var val = parseInt(input.value, 10);
       if (isNaN(val)) { fb.className = 'feedback no'; fb.textContent = 'Bitte eine Zahl eingeben'; return; }
-      if (val === current.ans) { var up = addPoints(POINTS_PER_TASK); fb.className = 'feedback ok'; fb.textContent = 'Richtig! +' + POINTS_PER_TASK + ' Punkte \uD83C\uDF1F'; btn.disabled = true; setTimeout(function () { celebrate(up, renderRechnen); }, 900); }
+      if (val === current.ans) { var up = addPoints(pts); fb.className = 'feedback ok'; fb.textContent = 'Richtig! +' + pts + ' Punkte \uD83C\uDF1F'; btn.disabled = true; setTimeout(function () { celebrate(up, renderRechnen); }, 900); }
       else { fb.className = 'feedback no'; fb.textContent = 'Fast! Versuch es nochmal.'; input.value = ''; input.focus(); }
     });
   }
 
-  // ---- Logik (anspruchsvoller) ----
+  // ---- Logik (nach Schwierigkeit) ----
   function newPattern() {
-    var mode = rnd(1, 3); var seq, answer, step;
-    if (mode === 1) { var start = rnd(2, 9); step = rnd(2, 9); seq = [start, start + step, start + step * 2, start + step * 3]; answer = start + step * 4; }
-    else if (mode === 2) { step = rnd(2, 9); var s = rnd(40, 80); seq = [s, s - step, s - step * 2, s - step * 3]; answer = s - step * 4; }
-    else { var b = rnd(1, 3); seq = [b, b * 2, b * 4, b * 8]; answer = b * 16; step = b * 8; }
+    var d = state.difficulty; var seq, answer, step, mode;
+    if (d === 'leicht') {
+      mode = rnd(1, 2);
+      if (mode === 1) { var st = rnd(1, 5); step = rnd(1, 3); seq = [st, st + step, st + step * 2, st + step * 3]; answer = st + step * 4; }
+      else { step = rnd(1, 3); var s = rnd(15, 30); seq = [s, s - step, s - step * 2, s - step * 3]; answer = s - step * 4; }
+    } else if (d === 'schwer') {
+      mode = rnd(1, 3);
+      if (mode === 1) { var st2 = rnd(3, 9); step = rnd(4, 9); seq = [st2, st2 + step, st2 + step * 2, st2 + step * 3]; answer = st2 + step * 4; }
+      else if (mode === 2) { step = rnd(4, 9); var s2 = rnd(50, 90); seq = [s2, s2 - step, s2 - step * 2, s2 - step * 3]; answer = s2 - step * 4; }
+      else { var bb = rnd(2, 4); seq = [bb, bb * 2, bb * 4, bb * 8]; answer = bb * 16; step = bb * 8; }
+    } else {
+      mode = rnd(1, 3);
+      if (mode === 1) { var st3 = rnd(2, 9); step = rnd(2, 9); seq = [st3, st3 + step, st3 + step * 2, st3 + step * 3]; answer = st3 + step * 4; }
+      else if (mode === 2) { step = rnd(2, 9); var s3 = rnd(40, 80); seq = [s3, s3 - step, s3 - step * 2, s3 - step * 3]; answer = s3 - step * 4; }
+      else { var b3 = rnd(1, 3); seq = [b3, b3 * 2, b3 * 4, b3 * 8]; answer = b3 * 16; step = b3 * 8; }
+    }
     return { anleitung: 'Welche Zahl kommt als N\u00e4chstes?', frage: seq.join('   ') + '   ?', options: numOptions(answer, [answer + step, answer - step, answer + 1]), correct: String(answer) };
   }
   function newDoubleHalf() {
-    if (rnd(0, 1) === 0) { var n = rnd(3, 15); var ans = n * 2; return { anleitung: 'Rechne im Kopf!', frage: 'Das Doppelte von ' + n + ' ist?', options: numOptions(ans, [ans + 2, ans - 2, n]), correct: String(ans) }; }
-    else { var m = rnd(2, 12) * 2; var h = m / 2; return { anleitung: 'Rechne im Kopf!', frage: 'Die H\u00e4lfte von ' + m + ' ist?', options: numOptions(h, [h + 1, h - 1, m]), correct: String(h) }; }
+    var d = state.difficulty; var maxN = d === 'leicht' ? 6 : (d === 'schwer' ? 20 : 15);
+    if (rnd(0, 1) === 0) { var n = rnd(2, maxN); var ans = n * 2; return { anleitung: 'Rechne im Kopf!', frage: 'Das Doppelte von ' + n + ' ist?', options: numOptions(ans, [ans + 2, ans - 2, n]), correct: String(ans) }; }
+    else { var m = rnd(1, maxN) * 2; var h = m / 2; return { anleitung: 'Rechne im Kopf!', frage: 'Die H\u00e4lfte von ' + m + ' ist?', options: numOptions(h, [h + 1, h - 1, m]), correct: String(h) }; }
   }
   function newCount() {
+    var d = state.difficulty; var lo = d === 'leicht' ? 3 : (d === 'schwer' ? 10 : 6); var hi = d === 'leicht' ? 8 : (d === 'schwer' ? 20 : 13);
     var icons = ['\uD83D\uDE9C','\uD83D\uDE99','\uD83D\uDE9A','\uD83E\uDDF1','\u26BD','\uD83C\uDFC7']; var ic = icons[rnd(0, icons.length - 1)];
-    var n = rnd(6, 13); var line = ''; for (var i = 0; i < n; i++) line += ic + ' ';
+    var n = rnd(lo, hi); var line = ''; for (var i = 0; i < n; i++) line += ic + ' ';
     return { anleitung: 'Wie viele siehst du? Z\u00e4hle genau!', frage: line, options: numOptions(n, [n + 1, n - 1, n + 2]), correct: String(n) };
   }
   function newOddOne() {
@@ -267,7 +309,8 @@
     return { anleitung: 'Was passt nicht zu den anderen?', frage: '', options: opts, correct: odd };
   }
   function newBiggest() {
-    var nums = []; while (nums.length < 3) { var x = rnd(11, 99); if (nums.indexOf(x) < 0) nums.push(x); }
+    var d = state.difficulty; var lo = d === 'leicht' ? 1 : (d === 'schwer' ? 50 : 11); var hi = d === 'leicht' ? 20 : (d === 'schwer' ? 300 : 99);
+    var nums = []; while (nums.length < 3) { var x = rnd(lo, hi); if (nums.indexOf(x) < 0) nums.push(x); }
     var big = Math.max(nums[0], nums[1], nums[2]);
     return { anleitung: 'Welche Zahl ist am gr\u00f6\u00dften?', frage: '', options: shuffle(nums.slice()).map(String), correct: String(big) };
   }
@@ -280,7 +323,7 @@
 
   function renderLogik() {
     clear(); app().appendChild(backBar()); app().appendChild(el('<div class="screen-title">\uD83E\uDDE0 Logik</div>'));
-    var q = newLogic();
+    var q = newLogic(); var pts = pointsPerTask();
     var card = el('<div class="card"></div>');
     var row = el('<div class="anleitung-row"></div>');
     row.appendChild(el('<div class="anleitung">' + q.anleitung + '</div>'));
@@ -298,9 +341,9 @@
         b.addEventListener('click', function () {
           if (done) return;
           if (opt === q.correct) {
-            done = true; var up = addPoints(POINTS_PER_TASK);
+            done = true; var up = addPoints(pts);
             b.style.background = '#c8f0e4'; b.style.borderColor = '#2a9d8f';
-            fb.className = 'feedback ok'; fb.textContent = 'Richtig! +' + POINTS_PER_TASK + ' \uD83C\uDF1F';
+            fb.className = 'feedback ok'; fb.textContent = 'Richtig! +' + pts + ' \uD83C\uDF1F';
             setTimeout(function () { celebrate(up, renderLogik); }, 900);
           } else {
             b.style.background = '#ffd6d6'; b.style.borderColor = '#e63946';
@@ -317,7 +360,8 @@
   // ---- Schreiben ----
   function renderSchreiben() {
     clear(); app().appendChild(backBar()); app().appendChild(el('<div class="screen-title">\u270F\uFE0F Schreiben</div>'));
-    var word = WORDS[rnd(0, WORDS.length - 1)];
+    var list = state.difficulty === 'leicht' ? WORDS_LEICHT : (state.difficulty === 'schwer' ? WORDS_SCHWER : WORDS_MITTEL);
+    var word = list[rnd(0, list.length - 1)]; var pts = pointsPerTask();
     app().appendChild(el('<div class="card"><div class="note">H\u00f6re das Wort und schreibe es richtig auf.</div><div class="question">\uD83D\uDD0A</div><input class="bigfield" type="text" id="wordin" autocomplete="off" autocorrect="off" autocapitalize="off"></div>'));
     var listen = el('<button class="btn">\uD83D\uDD0A Wort vorlesen</button>');
     var hint = el('<button class="btn gray small">Tipp anzeigen</button>');
@@ -330,7 +374,7 @@
     var input = document.getElementById('wordin');
     btn.addEventListener('click', function () {
       var val = (input.value || '').trim().toLowerCase();
-      if (val === word.toLowerCase()) { var up = addPoints(POINTS_PER_TASK); fb.className = 'feedback ok'; fb.textContent = 'Super! Das Wort war "' + word + '". +' + POINTS_PER_TASK + ' \uD83C\uDF1F'; btn.disabled = true; setTimeout(function () { celebrate(up, renderSchreiben); }, 1100); }
+      if (val === word.toLowerCase()) { var up = addPoints(pts); fb.className = 'feedback ok'; fb.textContent = 'Super! Das Wort war "' + word + '". +' + pts + ' \uD83C\uDF1F'; btn.disabled = true; setTimeout(function () { celebrate(up, renderSchreiben); }, 1100); }
       else { fb.className = 'feedback no'; fb.textContent = 'Noch nicht ganz. Probier es nochmal!'; }
     });
   }
@@ -354,11 +398,11 @@
   // ---- Lesen ----
   function renderLesen() {
     clear(); app().appendChild(backBar()); app().appendChild(el('<div class="screen-title">\uD83D\uDCD6 Lesen</div>'));
-    var text = TEXTS[rnd(0, TEXTS.length - 1)];
+    var text = TEXTS[rnd(0, TEXTS.length - 1)]; var pts = pointsPerTask();
     app().appendChild(el('<div class="card"><div class="readtext">' + text + '</div></div>'));
     app().appendChild(el('<div class="note">Maxime liest den Text laut vor. Danach gibt ein Elternteil per PIN die Punkte frei.</div>'));
-    var btn = el('<button class="btn">\u2705 Vorgelesen - Punkte freigeben</button>');
-    btn.addEventListener('click', function () { askPin(function () { var up = addPoints(POINTS_PER_TASK); showAward(up, renderLesen); }); });
+    var btn = el('<button class="btn">\u2705 Vorgelesen - ' + pts + ' Punkte freigeben</button>');
+    btn.addEventListener('click', function () { askPin(function () { var up = addPoints(pts); showAward(up, renderLesen); }); });
     app().appendChild(btn);
   }
 
