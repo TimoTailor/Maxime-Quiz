@@ -199,6 +199,9 @@
     var histBtn = el('<button class="btn">\uD83D\uDCCA Verlauf ansehen</button>');
     histBtn.addEventListener('click', renderHistory);
     app().appendChild(histBtn);
+    var pinBtn = el('<button class="btn">\uD83D\uDD11 PIN \u00e4ndern</button>');
+    pinBtn.addEventListener('click', renderChangePin);
+    app().appendChild(pinBtn);
     var tCard = el('<div class="card"></div>');
     tCard.appendChild(el('<div class="readtext" style="text-align:center">\u23F0 Lernzeit</div>'));
     tCard.appendChild(el('<div class="readtext" style="text-align:center;margin:6px 0"><b>' + fmtHour(state.startHour) + ' - ' + fmtHour(state.endHour) + ' Uhr</b></div>'));
@@ -223,6 +226,33 @@
     resetBtn.addEventListener('click', confirmReset);
     app().appendChild(resetBtn);
     app().appendChild(el('<div class="note">Setzt Punkte, Level, Serie und Verlauf auf null zur\u00fcck. Farbe, Zeiten und Schwierigkeit bleiben erhalten.</div>'));
+  }
+  function renderChangePin() {
+    clear();
+    var back = el('<button class="back-btn">\u2190 Zur\u00fcck</button>'); back.addEventListener('click', renderParentArea); app().appendChild(back);
+    app().appendChild(el('<div class="screen-title">\uD83D\uDD11 PIN \u00e4ndern</div>'));
+    var info = el('<div class="note">Gib den neuen 4-stelligen PIN ein.</div>'); app().appendChild(info);
+    var dots = el('<div class="pin-dots"></div>'); var card = el('<div class="card"></div>'); card.appendChild(dots);
+    var pad = el('<div class="keypad"></div>'); var entry = ''; var first = ''; var step = 1;
+    function refresh() { var s = ''; for (var i = 0; i < entry.length; i++) s += '\u25CF'; dots.textContent = s; }
+    var keys = ['1','2','3','4','5','6','7','8','9','C','0','OK'];
+    for (var i = 0; i < keys.length; i++) {
+      (function (k) { var b = el('<button class="key">' + k + '</button>'); b.addEventListener('click', function () {
+        if (k === 'C') { entry = ''; refresh(); return; }
+        if (k === 'OK') {
+          if (entry.length !== 4) { dots.textContent = 'Bitte 4 Ziffern'; entry = ''; return; }
+          if (step === 1) { first = entry; entry = ''; step = 2; info.textContent = 'Zur Best\u00e4tigung nochmal eingeben.'; refresh(); }
+          else { if (entry === first) { state.pin = first; state.pinSet = true; save(state); renderPinChanged(); } else { dots.textContent = 'Stimmt nicht \u00fcberein'; entry = ''; first = ''; step = 1; info.textContent = 'Gib den neuen 4-stelligen PIN ein.'; } }
+          return;
+        }
+        if (entry.length < 4) { entry += k; } refresh();
+      }); pad.appendChild(b); })(keys[i]);
+    }
+    card.appendChild(pad); app().appendChild(card);
+  }
+  function renderPinChanged() {
+    clear(); app().appendChild(el('<div class="header" style="margin-top:40px"><div class="badge-big">\uD83D\uDD12</div><div class="screen-title">PIN ge\u00e4ndert!</div><div class="readtext">Der neue Eltern-PIN ist gespeichert.</div></div>'));
+    var b = el('<button class="btn green">Zur\u00fcck zum Eltern-Bereich</button>'); b.addEventListener('click', renderParentArea); app().appendChild(b);
   }
   function confirmReset() {
     clear(); app().appendChild(el('<div class="screen-title">Wirklich zur\u00fccksetzen?</div>'));
@@ -460,7 +490,7 @@
         if (k === 'C') { entry = ''; } else if (k === 'OK') { if (entry === state.pin) { onOk(); } else { dots.textContent = 'Falscher PIN'; entry = ''; } return; } else if (entry.length < 4) { entry += k; } refresh();
       }); pad.appendChild(b); })(keys[i]);
     }
-    card.appendChild(pad); app().appendChild(card); app().appendChild(el('<div class="note">Standard-PIN: 1234 (sp\u00e4ter \u00e4nderbar)</div>'));
+    card.appendChild(pad); app().appendChild(card);
   }
 
   // ---- Lesen ----
