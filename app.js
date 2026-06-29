@@ -5,6 +5,7 @@
   var KIND_NAME = 'Maxime';
   var LEVELS = [0, 50, 120, 210, 320, 450, 600, 780, 980, 1200];
   var BADGES = ['\uD83E\uDDF1','\uD83D\uDE99','\uD83D\uDE9C','\uD83D\uDEFB','\uD83D\uDE9A','\uD83C\uDFD7','\uD83D\uDEA7','\uD83D\uDE9B','\uD83C\uDFC6','\uD83D\uDC51'];
+  var BADGE_NAMES = ['Bau-Starter','Flitzer','Trecker-Fahrer','Pickup-Profi','Laster-Lenker','Kran-Kapit\u00e4n','Baustellen-Boss','Truck-Held','Pokal-Held','Lego-K\u00f6nig'];
   var POINTS_PER_TASK = 10;
   var DEFAULT_PIN = '1234';
   var LAST_SCHOOLDAY = '2026-07-17';
@@ -50,6 +51,7 @@
   // ---- Helpers ----
   function levelFor(points) { var lvl = 1; for (var i = 0; i < LEVELS.length; i++) { if (points >= LEVELS[i]) lvl = i + 1; } return lvl; }
   function badgeFor(points) { return BADGES[levelFor(points) - 1]; }
+  function badgeNameFor(points) { return BADGE_NAMES[levelFor(points) - 1]; }
   function nextThreshold(points) { for (var i = 0; i < LEVELS.length; i++) { if (points < LEVELS[i]) return LEVELS[i]; } return LEVELS[LEVELS.length - 1]; }
   function addPoints(n) { var before = levelFor(state.points); state.points += n; state.completed += 1; updateStreak(); save(state); return levelFor(state.points) > before; }
   function daysUntil(dateStr) { var target = new Date(dateStr + 'T00:00:00'); var now = new Date(); var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()); return Math.ceil((target - t0) / (1000 * 60 * 60 * 24)); }
@@ -58,6 +60,7 @@
   function clear() { app().innerHTML = ''; }
   function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
   function shuffle(arr) { for (var i = arr.length - 1; i > 0; i--) { var j = rnd(0, i); var t = arr[i]; arr[i] = arr[j]; arr[j] = t; } return arr; }
+  function numOptions(answer, cands) { var out = [answer]; for (var i = 0; i < cands.length; i++) { var c = cands[i]; if (c > 0 && out.indexOf(c) < 0) out.push(c); } var k = 1; while (out.length < 4) { var a = answer + k; if (a > 0 && out.indexOf(a) < 0) out.push(a); var b = answer - k; if (out.length < 4 && b > 0 && out.indexOf(b) < 0) out.push(b); k++; } return shuffle(out).slice(0, 4).map(String); }
   function speak(txt) { try { if (window.speechSynthesis) { var u = new SpeechSynthesisUtterance(txt); u.lang = 'de-DE'; u.rate = 0.85; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } } catch (e) {} }
   function greeting() { var h = new Date().getHours(); if (h < 11) return 'Guten Morgen'; if (h < 18) return 'Hallo'; return 'Guten Abend'; }
   function motto() {
@@ -95,7 +98,9 @@
     var prev = LEVELS[lvl - 1]; var span = next - prev; if (span <= 0) span = 1;
     var pct = Math.min(100, Math.round(((state.points - prev) / span) * 100)); var atMax = lvl >= LEVELS.length;
     var streak = displayStreak();
-    var streakHtml = streak > 0 ? '<div class="streak">\uD83D\uDD25 ' + streak + (streak === 1 ? ' Tag' : ' Tage') + ' in Folge ge\u00fcbt!</div>' : '';
+    var streakHtml = streak > 0
+      ? '<div class="streak">\uD83D\uDD25 ' + streak + (streak === 1 ? ' Tag' : ' Tage') + ' in Folge ge\u00fcbt!</div>'
+      : '<div class="streak">\uD83D\uDD25 \u00dcbe heute und starte deine Serie!</div>';
     var head = el(
       '<div class="header">' +
       '<div class="greeting">' + greeting() + ', ' + KIND_NAME + '! \uD83D\uDC4B</div>' +
@@ -103,6 +108,7 @@
       streakHtml +
       '<div class="badge-big">' + badge + '</div>' +
       '<div class="level-label">Level ' + lvl + '</div>' +
+      '<div class="badge-name">' + badgeNameFor(state.points) + '</div>' +
       '<div class="points">' + state.points + ' Punkte</div>' +
       '<div class="progress-wrap"><div class="progress-bar" style="width:' + pct + '%"></div></div>' +
       '<div class="progress-text">' + (atMax ? 'H\u00f6chstes Level erreicht!' : 'Noch ' + (next - state.points) + ' Punkte bis zum n\u00e4chsten Level') + '</div>' +
@@ -122,7 +128,6 @@
       (function (d) { var b = el('<button class="tile ' + d[0] + '"><span class="emoji">' + d[1] + '</span>' + d[2] + '</button>'); b.addEventListener('click', function () { route(d[0]); }); tiles.appendChild(b); })(defs[i]);
     }
     app().appendChild(tiles);
-    // Farbschema-Auswahl
     app().appendChild(el('<div class="theme-title">\uD83C\uDF08 W\u00e4hle deine Farbe</div>'));
     var row = el('<div class="theme-row"></div>');
     for (var j = 0; j < THEMES.length; j++) {
@@ -142,7 +147,7 @@
   function celebrate(leveledUp, cb) {
     if (leveledUp) {
       clear();
-      app().appendChild(el('<div class="header" style="margin-top:40px"><div class="badge-big">' + badgeFor(state.points) + '</div><div class="screen-title">Neues Level ' + levelFor(state.points) + ', ' + KIND_NAME + '! \uD83C\uDF89</div><div class="points">' + state.points + ' Punkte</div></div>'));
+      app().appendChild(el('<div class="header" style="margin-top:40px"><div class="badge-big">' + badgeFor(state.points) + '</div><div class="screen-title">Neues Level ' + levelFor(state.points) + ', ' + KIND_NAME + '! \uD83C\uDF89</div><div class="badge-name">' + badgeNameFor(state.points) + '</div><div class="points">' + state.points + ' Punkte</div></div>'));
       var btn = el('<button class="btn green">Weiter</button>'); btn.addEventListener('click', cb); app().appendChild(btn);
     } else { cb(); }
   }
@@ -170,42 +175,44 @@
     });
   }
 
-  // ---- Logik ----
+  // ---- Logik (anspruchsvoller) ----
   function newPattern() {
-    if (rnd(0, 1) === 0) {
-      var start = rnd(1, 5); var step = rnd(1, 5);
-      var seq = [start, start + step, start + step * 2, start + step * 3]; var answer = start + step * 4;
-      var opts = shuffle([answer, answer + step, answer - step, answer + 1]);
-      return { anleitung: 'Was kommt als N\u00e4chstes?', frage: seq.join('   ') + '   ?', options: opts.map(String), correct: String(answer) };
-    } else {
-      var pair = [['\uD83D\uDE9C','\uD83D\uDE99'], ['\uD83C\uDF4E','\uD83C\uDF4C'], ['\u2B50','\uD83C\uDF1A'], ['\uD83D\uDD34','\uD83D\uDD35']][rnd(0,3)];
-      var seqE = [pair[0], pair[1], pair[0], pair[1]]; var ansE = pair[0];
-      var optsE = shuffle([pair[0], pair[1], '\uD83C\uDF33', '\uD83D\uDC36']);
-      return { anleitung: 'Was kommt als N\u00e4chstes?', frage: seqE.join('  ') + '  ?', options: optsE, correct: ansE };
-    }
+    var mode = rnd(1, 3); var seq, answer, step;
+    if (mode === 1) { var start = rnd(2, 9); step = rnd(2, 9); seq = [start, start + step, start + step * 2, start + step * 3]; answer = start + step * 4; }
+    else if (mode === 2) { step = rnd(2, 9); var s = rnd(40, 80); seq = [s, s - step, s - step * 2, s - step * 3]; answer = s - step * 4; }
+    else { var b = rnd(1, 3); seq = [b, b * 2, b * 4, b * 8]; answer = b * 16; step = b * 8; }
+    return { anleitung: 'Welche Zahl kommt als N\u00e4chstes?', frage: seq.join('   ') + '   ?', options: numOptions(answer, [answer + step, answer - step, answer + 1]), correct: String(answer) };
+  }
+  function newDoubleHalf() {
+    if (rnd(0, 1) === 0) { var n = rnd(3, 15); var ans = n * 2; return { anleitung: 'Rechne im Kopf!', frage: 'Das Doppelte von ' + n + ' ist?', options: numOptions(ans, [ans + 2, ans - 2, n]), correct: String(ans) }; }
+    else { var m = rnd(2, 12) * 2; var h = m / 2; return { anleitung: 'Rechne im Kopf!', frage: 'Die H\u00e4lfte von ' + m + ' ist?', options: numOptions(h, [h + 1, h - 1, m]), correct: String(h) }; }
+  }
+  function newCount() {
+    var icons = ['\uD83D\uDE9C','\uD83D\uDE99','\uD83D\uDE9A','\uD83E\uDDF1','\u26BD','\uD83C\uDFC7']; var ic = icons[rnd(0, icons.length - 1)];
+    var n = rnd(6, 13); var line = ''; for (var i = 0; i < n; i++) line += ic + ' ';
+    return { anleitung: 'Wie viele siehst du? Z\u00e4hle genau!', frage: line, options: numOptions(n, [n + 1, n - 1, n + 2]), correct: String(n) };
   }
   function newOddOne() {
-    var groups = [
-      ['\uD83C\uDF4E','\uD83C\uDF4C','\uD83C\uDF50'],
-      ['\uD83D\uDC36','\uD83D\uDC31','\uD83D\uDC1F'],
-      ['\uD83D\uDE9C','\uD83D\uDE99','\uD83D\uDE92']
+    var sets = [
+      [['\uD83D\uDC36','\uD83D\uDC31','\uD83D\uDC34','\uD83D\uDC2E'], '\uD83D\uDE9C'],
+      [['\uD83C\uDF4E','\uD83C\uDF4C','\uD83C\uDF50','\uD83C\uDF53'], '\uD83D\uDC36'],
+      [['\uD83D\uDE9C','\uD83D\uDE99','\uD83D\uDE9A','\uD83D\uDE9B'], '\uD83C\uDF4E']
     ];
-    var odds = ['\uD83D\uDE97','\uD83C\uDF33','\uD83C\uDF4E'];
-    var i = rnd(0, groups.length - 1); var odd = odds[i];
-    var opts = shuffle(groups[i].concat([odd]));
-    return { anleitung: 'Was passt nicht dazu?', frage: '', options: opts, correct: odd };
+    var pick = sets[rnd(0, sets.length - 1)]; var odd = pick[1];
+    var opts = shuffle(pick[0].concat([odd]));
+    return { anleitung: 'Was passt nicht zu den anderen?', frage: '', options: opts, correct: odd };
   }
-  function newBigger() {
-    var a = rnd(1, 100); var b = rnd(1, 100); while (b === a) { b = rnd(1, 100); }
-    var bigger = a > b ? a : b;
-    return { anleitung: 'Welche Zahl ist gr\u00f6\u00dfer?', frage: '', options: [String(a), String(b)], correct: String(bigger) };
+  function newBiggest() {
+    var nums = []; while (nums.length < 3) { var x = rnd(11, 99); if (nums.indexOf(x) < 0) nums.push(x); }
+    var big = Math.max(nums[0], nums[1], nums[2]);
+    return { anleitung: 'Welche Zahl ist am gr\u00f6\u00dften?', frage: '', options: shuffle(nums.slice()).map(String), correct: String(big) };
   }
   function newTrueFalse() {
-    var facts = [['Ein Hund hat vier Beine.', true], ['Die Sonne ist blau.', false], ['Ein Fisch kann schwimmen.', true], ['Ein Auto kann fliegen.', false], ['Im Winter ist es kalt.', true], ['Eine Katze sagt Muh.', false], ['Ein Baum hat Bl\u00e4tter.', true], ['Die Maus ist gr\u00f6\u00dfer als der Elefant.', false]];
+    var facts = [['Ein Spinne hat acht Beine.', true], ['Ein Dreieck hat vier Ecken.', false], ['Eine Woche hat sieben Tage.', true], ['Der Januar hat 40 Tage.', false], ['Eine Hand hat f\u00fcnf Finger.', true], ['Ein Fu\u00dfballteam hat zwei Spieler.', false], ['Ein Jahr hat zw\u00f6lf Monate.', true], ['Ein Quadrat hat drei Seiten.', false]];
     var f = facts[rnd(0, facts.length - 1)];
-    return { anleitung: 'Stimmt das?', frage: f[0], options: ['Ja', 'Nein'], correct: f[1] ? 'Ja' : 'Nein' };
+    return { anleitung: 'Stimmt das? Lies genau!', frage: f[0], options: ['Ja', 'Nein'], correct: f[1] ? 'Ja' : 'Nein' };
   }
-  function newLogic() { var g = [newPattern, newOddOne, newBigger, newTrueFalse][rnd(0, 3)]; return g(); }
+  function newLogic() { var g = [newPattern, newDoubleHalf, newCount, newOddOne, newBiggest, newTrueFalse][rnd(0, 5)]; return g(); }
 
   function renderLogik() {
     clear(); app().appendChild(backBar()); app().appendChild(el('<div class="screen-title">\uD83E\uDDE0 Logik</div>'));
@@ -308,7 +315,7 @@
     clear(); app().appendChild(el('<div class="header" style="margin-top:30px"><div class="badge-big">\u2B50</div><div class="screen-title">Punkte gespeichert!</div><div class="points">' + state.points + ' Punkte</div></div>'));
     var b1 = el('<button class="btn green">Nochmal</button>'); b1.addEventListener('click', backFn);
     var b2 = el('<button class="btn gray">Zum Start</button>'); b2.addEventListener('click', renderHome);
-    if (up) { app().insertBefore(el('<div class="feedback ok">Neues Level ' + levelFor(state.points) + '! ' + badgeFor(state.points) + '</div>'), app().firstChild); }
+    if (up) { app().insertBefore(el('<div class="feedback ok">Neues Level ' + levelFor(state.points) + '! ' + badgeFor(state.points) + ' ' + badgeNameFor(state.points) + '</div>'), app().firstChild); }
     app().appendChild(b1); app().appendChild(b2);
   }
 
