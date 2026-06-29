@@ -32,13 +32,13 @@
   ];
 
   // ---- State ----
-  function defaultState() { return { points: 0, completed: 0, pin: DEFAULT_PIN, pinSet: false, streak: 0, lastActive: null, theme: 'orange', bdayBonusYear: null, startHour: 7, endHour: 20, difficulty: 'mittel', history: [] }; }
+  function defaultState() { return { points: 0, completed: 0, pin: DEFAULT_PIN, pinSet: false, streak: 0, lastActive: null, theme: 'orange', bdayBonusYear: null, startHour: 7, endHour: 20, difficulty: 'mittel', history: [], updatedAt: null }; }
+  function normalize(s) { if (typeof s.streak !== 'number') s.streak = 0; if (!s.lastActive) s.lastActive = null; if (!s.theme) s.theme = 'orange'; if (typeof s.bdayBonusYear === 'undefined') s.bdayBonusYear = null; if (!s.pin) s.pin = DEFAULT_PIN; if (typeof s.startHour !== 'number') s.startHour = 7; if (typeof s.endHour !== 'number') s.endHour = 20; if (!s.difficulty) s.difficulty = 'mittel'; if (!s.history || typeof s.history.length !== 'number') s.history = []; if (typeof s.updatedAt === 'undefined') s.updatedAt = null; return s; }
   function load() {
-    try { var raw = localStorage.getItem('maximeState'); if (!raw) return defaultState(); var s = JSON.parse(raw); if (typeof s.points !== 'number') return defaultState();
-      if (typeof s.streak !== 'number') s.streak = 0; if (!s.lastActive) s.lastActive = null; if (!s.theme) s.theme = 'orange'; if (typeof s.bdayBonusYear === 'undefined') s.bdayBonusYear = null; if (!s.pin) s.pin = DEFAULT_PIN; if (typeof s.startHour !== 'number') s.startHour = 7; if (typeof s.endHour !== 'number') s.endHour = 20; if (!s.difficulty) s.difficulty = 'mittel'; if (!s.history || typeof s.history.length !== 'number') s.history = []; return s; }
+    try { var raw = localStorage.getItem('maximeState'); if (!raw) return defaultState(); var s = JSON.parse(raw); if (typeof s.points !== 'number') return defaultState(); return normalize(s); }
     catch (e) { return defaultState(); }
   }
-  function save(s) { try { localStorage.setItem('maximeState', JSON.stringify(s)); } catch (e) {} }
+  function save(s) { try { s.updatedAt = new Date().toISOString(); localStorage.setItem('maximeState', JSON.stringify(s)); } catch (e) {} try { if (window.MaximeSync && window.MaximeSync.enabled) window.MaximeSync.schedulePush(s); } catch (e) {} }
   var state = load();
 
   function pointsPerTask() { return POINTS_BY_DIFF[state.difficulty] || 10; }
@@ -505,6 +505,25 @@
     else renderHome();
   }
 
-  applyTheme(state.theme || 'orange');
-  renderHome();
+  // ---- Start mit Supabase-Sync (offline-first) ----
+  function adoptRemote(remote) { state = normalize(remote); try { localStorage.setItem('maximeState', JSON.stringify(state)); } catch (e) {} }
+  function boot() {
+    applyTheme(state.theme || 'orange');
+    var rendered = false;
+    function go() { if (rendered) return; rendered = true; applyTheme(state.theme || 'orange'); renderHome(); }
+    if (window.MaximeSync && window.MaximeSync.enabled) {
+      var t = setTimeout(go, 4000);
+      window.MaximeSync.pull(function (row) {
+        try {
+          if (row && row.data && typeof row.data.points === 'number') {
+            var remote = row.data; var rt = remote.updatedAt || row.updated_at || ''; var lt = state.updatedAt || '';
+            if (rt > lt) { adoptRemote(remote); }
+            else if (lt > rt) { window.MaximeSync.pushNow(state); }
+          } else { window.MaximeSync.pushNow(state); }
+        } catch (e) {}
+        clearTimeout(t); go();
+      });
+    } else { go(); }
+  }
+  boot();
 })();
