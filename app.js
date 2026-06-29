@@ -28,10 +28,10 @@
   ];
 
   // ---- State ----
-  function defaultState() { return { points: 0, completed: 0, pin: DEFAULT_PIN, pinSet: false, streak: 0, lastActive: null, theme: 'orange', bdayBonusYear: null }; }
+  function defaultState() { return { points: 0, completed: 0, pin: DEFAULT_PIN, pinSet: false, streak: 0, lastActive: null, theme: 'orange', bdayBonusYear: null, startHour: 7, endHour: 20 }; }
   function load() {
     try { var raw = localStorage.getItem('maximeState'); if (!raw) return defaultState(); var s = JSON.parse(raw); if (typeof s.points !== 'number') return defaultState();
-      if (typeof s.streak !== 'number') s.streak = 0; if (!s.lastActive) s.lastActive = null; if (!s.theme) s.theme = 'orange'; if (typeof s.bdayBonusYear === 'undefined') s.bdayBonusYear = null; if (!s.pin) s.pin = DEFAULT_PIN; return s; }
+      if (typeof s.streak !== 'number') s.streak = 0; if (!s.lastActive) s.lastActive = null; if (!s.theme) s.theme = 'orange'; if (typeof s.bdayBonusYear === 'undefined') s.bdayBonusYear = null; if (!s.pin) s.pin = DEFAULT_PIN; if (typeof s.startHour !== 'number') s.startHour = 7; if (typeof s.endHour !== 'number') s.endHour = 20; return s; }
     catch (e) { return defaultState(); }
   }
   function save(s) { try { localStorage.setItem('maximeState', JSON.stringify(s)); } catch (e) {} }
@@ -47,6 +47,10 @@
     state.lastActive = t; save(state);
   }
   function displayStreak() { if (state.lastActive === todayStr() || state.lastActive === yesterdayStr()) return state.streak || 0; return 0; }
+
+  // ---- Lernzeit ----
+  function fmtHour(h) { return (h < 10 ? '0' + h : h) + ':00'; }
+  function withinHours() { var h = new Date().getHours(); return h >= state.startHour && h < state.endHour; }
 
   // ---- Helpers ----
   function levelFor(points) { var lvl = 1; for (var i = 0; i < LEVELS.length; i++) { if (points >= LEVELS[i]) lvl = i + 1; } return lvl; }
@@ -87,8 +91,19 @@
     return '<div class="countdown"><div class="cd-emoji">\u23F3</div><div class="num">' + num + '</div><div class="lbl">' + lbl + '</div></div>';
   }
 
+  // ---- Lernpause-Bildschirm ----
+  function renderPause() {
+    clear();
+    app().appendChild(el('<div class="header"><div class="greeting">' + greeting() + ', ' + KIND_NAME + '! \uD83D\uDC4B</div></div>'));
+    app().appendChild(el('<div class="card" style="text-align:center"><div class="badge-big">\uD83C\uDF19</div><div class="screen-title">Jetzt ist Lernpause</div><div class="readtext">Du kannst von <b>' + fmtHour(state.startHour) + '</b> bis <b>' + fmtHour(state.endHour) + '</b> Uhr \u00fcben.<br>Bis bald! \uD83D\uDC4B</div></div>'));
+    var pBtn = el('<button class="btn gray small">\u2699\uFE0F Eltern-Bereich</button>');
+    pBtn.addEventListener('click', function () { askPin(renderParentArea); });
+    app().appendChild(pBtn);
+  }
+
   // ---- Home ----
   function renderHome() {
+    if (!withinHours()) { renderPause(); return; }
     clear();
     maybeBirthdayBonus();
     if (isBirthday()) {
@@ -151,10 +166,32 @@
   function renderParentArea() {
     clear(); app().appendChild(backBar()); app().appendChild(el('<div class="screen-title">\u2699\uFE0F Eltern-Bereich</div>'));
     app().appendChild(el('<div class="card"><div class="readtext">Aktueller Stand:<br><b>' + state.points + ' Punkte</b> \u00b7 Level ' + levelFor(state.points) + ' (' + badgeNameFor(state.points) + ')</div></div>'));
+    // Lernzeit
+    var tCard = el('<div class="card"></div>');
+    tCard.appendChild(el('<div class="readtext" style="text-align:center">\u23F0 Lernzeit</div>'));
+    tCard.appendChild(el('<div class="readtext" style="text-align:center;margin:6px 0"><b>' + fmtHour(state.startHour) + ' - ' + fmtHour(state.endHour) + ' Uhr</b></div>'));
+    function stepRow(label, valStr, onDec, onInc) {
+      var r = el('<div style="display:-webkit-box;display:flex;-webkit-box-align:center;align-items:center;-webkit-box-pack:center;justify-content:center;margin:8px 0"></div>');
+      r.appendChild(el('<span style="font-size:20px;width:70px">' + label + '</span>'));
+      var minus = el('<button class="key" style="width:60px;margin:0 6px">\u2212</button>');
+      var lab = el('<span style="font-size:22px;font-weight:bold;width:80px;text-align:center;display:inline-block">' + valStr + '</span>');
+      var plus = el('<button class="key" style="width:60px;margin:0 6px">+</button>');
+      minus.addEventListener('click', onDec); plus.addEventListener('click', onInc);
+      r.appendChild(minus); r.appendChild(lab); r.appendChild(plus); return r;
+    }
+    tCard.appendChild(stepRow('Start', fmtHour(state.startHour),
+      function () { if (state.startHour > 0) { state.startHour--; if (state.startHour >= state.endHour) state.endHour = state.startHour + 1; save(state); renderParentArea(); } },
+      function () { if (state.startHour < state.endHour - 1) { state.startHour++; save(state); renderParentArea(); } }));
+    tCard.appendChild(stepRow('Ende', fmtHour(state.endHour),
+      function () { if (state.endHour > state.startHour + 1) { state.endHour--; save(state); renderParentArea(); } },
+      function () { if (state.endHour < 24) { state.endHour++; save(state); renderParentArea(); } }));
+    app().appendChild(tCard);
+    app().appendChild(el('<div class="note">Au\u00dferhalb dieser Zeit zeigt die App eine Lernpause an.</div>'));
+    // Reset
     var resetBtn = el('<button class="btn" style="background:#e63946">\uD83D\uDDD1\uFE0F Fortschritt zur\u00fccksetzen</button>');
     resetBtn.addEventListener('click', confirmReset);
     app().appendChild(resetBtn);
-    app().appendChild(el('<div class="note">Setzt Punkte, Level und die Tages-Serie auf null zur\u00fcck. Farbe und PIN bleiben erhalten.</div>'));
+    app().appendChild(el('<div class="note">Setzt Punkte, Level und die Tages-Serie auf null zur\u00fcck. Farbe und Zeiten bleiben erhalten.</div>'));
   }
   function confirmReset() {
     clear(); app().appendChild(el('<div class="screen-title">Wirklich zur\u00fccksetzen?</div>'));
