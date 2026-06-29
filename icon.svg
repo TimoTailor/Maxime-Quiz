@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="96" fill="#ff9f1c"/>
+  <!-- Auspuff -->
+  <rect x="298" y="150" width="18" height="74" rx="8" fill="#37474f"/>
+  <circle cx="307" cy="146" r="12" fill="#90a4ae"/>
+  <!-- Motorhaube -->
+  <rect x="286" y="214" width="154" height="92" rx="16" fill="#2f9e44"/>
+  <!-- Kuehlergrill -->
+  <rect x="414" y="232" width="22" height="58" rx="6" fill="#ffd43b"/>
+  <!-- Scheinwerfer -->
+  <circle cx="424" cy="224" r="10" fill="#fff3bf"/>
+  <!-- Kabine -->
+  <rect x="148" y="148" width="162" height="162" rx="22" fill="#37b24d"/>
+  <!-- Fenster -->
+  <rect x="176" y="176" width="106" height="72" rx="12" fill="#a5d8ff"/>
+  <!-- Karosserie-Leiste -->
+  <rect x="148" y="300" width="292" height="42" rx="14" fill="#2f9e44"/>
+  <!-- Hinterrad -->
+  <circle cx="198" cy="360" r="96" fill="#212529"/>
+  <circle cx="198" cy="360" r="46" fill="#ced4da"/>
+  <circle cx="198" cy="360" r="16" fill="#495057"/>
+  <!-- Vorderrad -->
+  <circle cx="404" cy="388" r="60" fill="#212529"/>
+  <circle cx="404" cy="388" r="28" fill="#ced4da"/>
+  <circle cx="404" cy="388" r="10" fill="#495057"/>
+</svg>
