@@ -64,6 +64,7 @@
   function nextThreshold(points) { for (var i = 0; i < LEVELS.length; i++) { if (points < LEVELS[i]) return LEVELS[i]; } return LEVELS[LEVELS.length - 1]; }
   function addPoints(n) { var before = levelFor(state.points); state.points += n; state.completed += 1; updateStreak(); save(state); return levelFor(state.points) > before; }
   function daysUntil(dateStr) { var target = new Date(dateStr + 'T00:00:00'); var now = new Date(); var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()); return Math.ceil((target - t0) / (1000 * 60 * 60 * 24)); }
+  function daysUntilBirthday() { var now = new Date(); var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()); var b = new Date(now.getFullYear(), BIRTHDAY_MONTH - 1, BIRTHDAY_DAY); if (b < t0) b = new Date(now.getFullYear() + 1, BIRTHDAY_MONTH - 1, BIRTHDAY_DAY); return Math.round((b - t0) / (1000 * 60 * 60 * 24)); }
   function el(html) { var d = document.createElement('div'); d.innerHTML = html; return d.firstChild; }
   function app() { return document.getElementById('app'); }
   function clear() { app().innerHTML = ''; }
@@ -94,6 +95,11 @@
     else if (toSchule > 0) { num = toSchule; lbl = toSchule === 1 ? 'Ferientag - sammle flei\u00dfig Punkte!' : 'Ferientage - sammle flei\u00dfig Punkte!'; }
     else { num = '\uD83C\uDF89'; lbl = 'Die Schule hat wieder begonnen!'; }
     return '<div class="countdown"><div class="cd-emoji">\u23F3</div><div class="num">' + num + '</div><div class="lbl">' + lbl + '</div></div>';
+  }
+  function birthdayCountdownHtml() {
+    if (isBirthday()) return '';
+    var d = daysUntilBirthday();
+    return '<div class="bday-countdown">\uD83C\uDF82 Noch ' + d + (d === 1 ? ' Tag' : ' Tage') + ' bis zu deinem Geburtstag!</div>';
   }
 
   // ---- Lernpause-Bildschirm ----
@@ -136,6 +142,7 @@
     );
     app().appendChild(head);
     app().appendChild(el(countdownHtml()));
+    var bc = birthdayCountdownHtml(); if (bc) app().appendChild(el(bc));
     var tiles = el('<div class="tiles"></div>');
     var defs = [
       ['rechnen', '\uD83D\uDD22', 'Rechnen'],

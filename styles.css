@@ -33,6 +33,7 @@ body.theme-lila { background: #f1e9ff; }
 .countdown .cd-emoji { font-size: 34px; line-height: 1; }
 .countdown .num { font-size: 58px; font-weight: bold; line-height: 1.1; }
 .countdown .lbl { font-size: 20px; font-weight: bold; opacity: .97; }
+.bday-countdown { background: -webkit-linear-gradient(left, #ffd166, #ff6b9d); background: linear-gradient(90deg, #ffd166, #ff6b9d); color: #5a2a00; border-radius: 14px; padding: 12px; text-align: center; font-size: 20px; font-weight: bold; margin: -6px 0 16px; }
 
 .tiles { display: block; }
 .tile {
